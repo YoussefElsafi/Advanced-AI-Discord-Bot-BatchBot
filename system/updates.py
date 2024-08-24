@@ -1,6 +1,6 @@
 from system.config import Image_Model_Name, NAME
 
-name = name
+name = NAME
 
 secret = "Status: SECRET UPDATE | Password: idk :D"
 
