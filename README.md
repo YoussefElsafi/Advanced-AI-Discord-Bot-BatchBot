@@ -53,8 +53,8 @@ To get BatchBot up and running on your Discord server, follow these steps:
 2. **Install Dependencies:**
    - Clone the repository:
      ```bash
-     git clone https://github.com/your-repo/batchbot.git
-     cd batchbot
+     git clone https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot.git
+     cd Advanced-AI-Discord-Bot-BatchBot
      ```
    - Install the required Python packages:
      ```bash
@@ -62,7 +62,7 @@ To get BatchBot up and running on your Discord server, follow these steps:
      ```
 
 3. **Configure Settings:**
-   - Create a `system/config.py` file with the following content and replace the placeholders with your actual API keys and tokens:
+   - In `system/config.py` file with the following content and replace the placeholders with your actual API keys and tokens:
      ```python
      TOKEN = "YOUR_DISCORD_BOT_TOKEN"
      API_KEY = "YOUR_GOOGLE_GENERATIVE_AI_API_KEY"
