@@ -1911,6 +1911,8 @@ model_choices = [
 @app_commands.describe(prompt="The image prompt", model="Choose a model to generate the image (optional)")
 @app_commands.choices(model=model_choices)
 async def img(interaction: discord.Interaction, prompt: str, model: str = None):  # Set model to None as default
+    if HUGGING_FACE_API == "YOUR_HUGGING_FACE_API_KEY":
+        await interaction.followup.send("Sorry, You have entered an Invalid Hugging Face API Key to use `/img`!")
 
     await interaction.response.defer()  # Defer the response to allow for processing time
 
