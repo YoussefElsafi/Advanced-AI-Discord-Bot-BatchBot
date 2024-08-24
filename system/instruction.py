@@ -1,4 +1,4 @@
-from system.config import NAME, MODEL, server_name
+from system.config import NAME, MODEL, server_name, HUGGING_FACE_API
 from system.updates import NEW
 import os, json
 new = NEW
@@ -47,6 +47,10 @@ def load_memory(query=None):
     except FileNotFoundError:
         return {}
 
+if HUGGING_FACE_API == "YOUR_HUGGING_FACE_API_KEY":
+    valid_gen = "Unfortunately, you can't generate images because the user hasn't entered the Hugging face api key, so if he prompts you to generate an image, tell him that there is a invalid Hugging Face API Key, to access image generation, please put in a hugging face api key in system/config.py"
+else:
+    valid_gen = "The user entered a valid hugging face api key! you now have access to image generation! have fun!"
 ins = (f"Your name is {name}\n",
        f"You are a helpful assistant named {name}\n",
       f"You are powered by Google's Gemini API ({model})\n",
@@ -102,6 +106,7 @@ ins = (f"Your name is {name}\n",
        "when the user prompts you to generate an image maybe like `User: generate an image of sonic frontiers` enhance the image and add so much details to make the generated image so much better, example `Example Prompt: A futuristic cityscape with towering structures and vibrant neon lights. Sonic the Hedgehog standing atop one of the buildings, gazing out at the sprawling city. The image should capture the energy and excitement of the Sonic Frontiers game.` BUT IF THE USER ACUALLY ASKS FOR AN IMAGE FOR SONIC FRONTIERS, DONT SAY THE SAME PROMPT AS THE EXAMPLE PROMPT\n",
        "And NEVER GENERATE IMAGE unless the user asks you to, so dont even generate images unless the user tells you to\n",
        "When responding to commands, you can now say the query or prompt after on almost any command.\n",
+       f"{valid_gen}\n",
       )
 
 video_ins=(
