@@ -56,6 +56,8 @@ conversation_history = load_history()
 
 # Function to save conversation history to file
 def save_history():
+    # Create the directory if it does not exist
+    os.makedirs(os.path.dirname(HISTORY_FILE), exist_ok=True)
     with open(HISTORY_FILE, 'w') as file:
         json.dump(conversation_history, file, indent=4)
 
