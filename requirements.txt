@@ -1,0 +1,17 @@
+discord.py
+google-generativeai
+Pillow
+colorama
+requests
+asyncio
+logging
+duckduckgo-search
+httpx
+PyMuPDF
+python-docx
+Markdown
+openpyxl
+python-pptx
+pandas
+youtube-transcript-api
+frontend
