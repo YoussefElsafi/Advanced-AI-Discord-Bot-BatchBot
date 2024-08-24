@@ -138,10 +138,16 @@ def load_memory(query=None):
 api_key = f"{API_KEY}"
 name = f"{NAME}"
 print(" ")
-print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}API KEY:{Style.RESET_ALL} {Fore.MAGENTA + Style.BRIGHT}{api_key}{Style.RESET_ALL}")
+if api_key == "YOUR_GEMINI_API_KEY":
+    print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}API KEY:{Style.RESET_ALL} {Fore.RED + Style.BRIGHT}INVALID GEMINI API KEY!{Style.RESET_ALL}")
+else:
+    print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}API KEY:{Style.RESET_ALL} {Fore.MAGENTA + Style.BRIGHT}{api_key}{Style.RESET_ALL}")
 print(Fore.RED + Style.BRIGHT + "__________________________________________________________________________________")
 print(" ")
-print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}BOT KEY:{Style.RESET_ALL} {Fore.BLUE + Style.BRIGHT}{TOKEN}{Style.RESET_ALL}")
+if TOKEN == "YOUR_DISCORD_BOT_TOKEN":
+    print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}BOT KEY:{Style.RESET_ALL} {Fore.RED + Style.BRIGHT}INVALID DISCORD TOKEN BOT!{Style.RESET_ALL}")
+else:
+    print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}BOT KEY:{Style.RESET_ALL} {Fore.BLUE + Style.BRIGHT}{TOKEN}{Style.RESET_ALL}")
 print(" ")
 
 # Global variable to store the member's custom name
