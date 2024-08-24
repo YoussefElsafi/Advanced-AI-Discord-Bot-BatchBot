@@ -1,9 +1,9 @@
 #Discord Bot Token
-TOKEN = "DISCORD_TOKEN_HERE"
+TOKEN = "YOUR_DISCORD_BOT_TOKEN"
 #Gemini API KEY
-API_KEY = "GEMINI_API_KEY_HERE"
+API_KEY = "YOUR_GEMINI_API_KEY"
 #Hugging Face API KEY
-HUGGING_FACE_API = "HUGGING_FACE_API_KEY_HERE" # You can leave it but you will not have access to Image generation
+HUGGING_FACE_API = "YOUR_HUGGING_FACE_API_KEY" # You can leave it but you will not have access to Image generation
 #Discord Bot's Name
 NAME = "BatchBot" # Change to whatever you want!
 # Server Name
