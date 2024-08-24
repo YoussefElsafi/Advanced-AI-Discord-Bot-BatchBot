@@ -1442,10 +1442,6 @@ async def rimage(ctx, *, query: str):
         add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\n ERROR: {e}")
         add_to_history("Conversation", member_name, f"/search*img {query}")
 
-@bot.command(name="ibragim")
-async def ibragim(ctx):
-    await ctx.reply("Sorry! this command expired.")
-
 @bot.command(name="search")
 async def search(ctx, *, query: str):
     member_name = ctx.author.display_name
