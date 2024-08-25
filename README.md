@@ -76,7 +76,7 @@ TOKEN = "YOUR_DISCORD_BOT_TOKEN"
 API_KEY = "YOUR_GOOGLE_GENERATIVE_AI_API_KEY"
 HUGGING_FACE_API = "YOUR_HUGGING_FACE_API_KEY"
 # Add other configuration settings as needed
-
+```
 
 ### 🚀 Run the Bot
 
@@ -84,7 +84,7 @@ Start the bot using the following command:
 
 ```bash
 python main.py
-
+```
 
 ## Usage
 
