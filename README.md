@@ -117,7 +117,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 If you have questions or need assistance, you can:
 
-- Reach out via email: [support@example.com](mailto:batchbothelp@gmail.com)
+- Reach out via email: [Support](mailto:batchbothelp@gmail.com)
 - Open an issue on our [GitHub repository](https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot/issues)
 - Watch our [YouTube tutorial](https://youtu.be/ow-Cw8OLTdI) for setup instructions
 - Check our [Documentation](DOCUMENTATION.md) for detailed guides
