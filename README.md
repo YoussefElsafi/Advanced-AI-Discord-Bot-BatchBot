@@ -86,13 +86,13 @@ To get BatchBot up and running on your Discord server, follow these steps:
    ```bash
    git clone https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot.git
    cd Advanced-AI-Discord-Bot-BatchBot
-   
+   ```
 
 2. Install the required Python packages:
 
    ```bash
    pip install -r requirements.txt
-   
+   ```
 
 ### ⚙️ Configure Settings
 
