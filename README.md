@@ -100,7 +100,7 @@ Edit the `system/config.py` file with the following content and replace the plac
 
 ```python
 TOKEN = "YOUR_DISCORD_BOT_TOKEN"
-API_KEY = "YOUR_GOOGLE_GENERATIVE_AI_API_KEY"
+API_KEY = "YOUR_GEMINI_API_KEY"
 HUGGING_FACE_API = "YOUR_HUGGING_FACE_API_KEY"
 # Add other configuration settings as needed
 ```
