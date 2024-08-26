@@ -91,16 +91,13 @@ python main.py
 Interact with BatchBot using the following commands:
 
 - `/ai [prompt]`: Starts a conversation with BatchBot. Use this command for any text-based prompt.
-- `/generate [description]`: Generates an image based on the provided description.
-- `/analyze [image_url]`: Analyzes an image and provides a detailed description.
-- `/summarize [youtube_url]`: Summarizes a YouTube video and provides a transcript.
-- `/file [file_url]`: Analyzes a file and provides key insights.
+- `/aitoggle on/off`: Starts a conversation and responses automatically without using the /ai!
+- `/img [prompt] [model(Optional)]`: Generates an image based on the provided description.
+- `works if you have aitoggle on`: Analyzes an image and provides a detailed description.
+- `no need for a command`: Summarizes a YouTube video and provides a transcript.
+- `no need for a command`: Analyzes a file and provides key insights.
 
-For a full list of commands, type `/help` in Discord after adding BatchBot to your server.
-
-## Contributing
-
-Contributions are welcome! Please read the [contributing guidelines](CONTRIBUTING.md) before submitting a pull request.
+For a full list of commands, type `//help` in Discord after adding BatchBot to your server.
 
 ## License
 
