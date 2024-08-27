@@ -1118,7 +1118,7 @@ async def on_message(message):
                     elif response_text.startswith("//#m3m0ry9(c0r3//"):
                         # Extract the text after "//#m3m0ry9(c0r3//"
                         text_after_command = response_text[len("//#m3m0ry9(c0r3//"):].strip()
-    
+
                         if text_after_command:
                             # Save the text to core memory
                             add_to_history_bot("Conversation", "", f"//#m3m0ry9(c0r3// {text_after_command}")
@@ -1126,7 +1126,7 @@ async def on_message(message):
                             save_memory(f"{timestamp} - {text_after_command}: ", text_after_command)
                             await send_message(message.channel, "Updated Memory!")
                             add_to_history("Conversation", "System", "Saved to Core Memory")
-    
+
                             try:
                                 async with message.channel.typing():
                                     add_to_history("Conversation", "Core-Memory", f"Updated Core Memory to: {load_memory()}")
@@ -1168,11 +1168,11 @@ async def on_message(message):
                                 print(f"Error generating content: {e}")
                                 add_to_history("Conversation", "System", f"Error generating content: {str(e)}")
                                 await message.channel.send("An error occurred while generating the response.")
-                                
+
                     elif response_text.startswith("/search*yt"):
                         # Extract the text after "/search*yt"
                         text_after_command = response_text[len("/search*yt"):].strip()
-    
+
                         if text_after_command:
                             search_query = text_after_command
                         else:
@@ -1184,9 +1184,9 @@ async def on_message(message):
                             query_response_text = response.text.strip()
                             add_to_history_bot("Conversation", " ", query_response_text)
                             search_query = f"Youtube Video: {query_response_text}"
-    
+
                         web = await send_message(message.channel, "Searching YouTube...")
-    
+
                         try:
                             results = DDGS().text(
                                 keywords=search_query,
@@ -1214,7 +1214,7 @@ async def on_message(message):
                     elif response_text.startswith("/search"):
                         # Extract the text after "/search"
                         text_after_command = response_text[len("/search"):].strip()
-    
+
                         if text_after_command:
                             search_query = text_after_command
                         else:
@@ -1226,9 +1226,9 @@ async def on_message(message):
                             query_response_text = response.text.strip()
                             add_to_history_bot("Conversation", " ", query_response_text)
                             search_query = query_response_text
-    
+
                         web = await send_message(message.channel, "Searching the web...")
-    
+
                         try:
                             results = DDGS().text(
                                 keywords=search_query,
@@ -1910,23 +1910,35 @@ model_choices = [
 @bot.tree.command(name="img", description="Generate an image based on your prompt.")
 @app_commands.describe(prompt="The image prompt", model="Choose a model to generate the image (optional)")
 @app_commands.choices(model=model_choices)
-async def img(interaction: discord.Interaction, prompt: str, model: str = None):  # Set model to None as default
+async def img(interaction: discord.Interaction, prompt: str, model: str = None):
     if HUGGING_FACE_API == "YOUR_HUGGING_FACE_API_KEY":
         await interaction.response.send_message("Sorry, You have entered an Invalid Hugging Face API Key to use `/img`!") 
+        return
+
     else:
         await interaction.response.defer()  # Defer the response to allow for processing time
-    
+
         api_key = HUGGING_FACE_API
-        max_retries = 5
-        backoff_factor = 2
-    
+        max_retries = 10  # Increased retries for better handling
+        backoff_factor = 3  # Increased backoff factor for longer wait times
+
         member_name = interaction.user.display_name
-        add_to_history("Conversation", member_name, f"/img {prompt} | Model: {model}")
-    
+
         # Use the default model if no model is provided
         if model is None:
             model = "stabilityai/stable-diffusion-xl-base-1.0"
-    
+
+        if model == "stabilityai/stable-diffusion-xl-base-1.0":
+            model_name = "Stable Diffusion XL Base 1.0"
+        elif model == "ehristoforu/dalle-3-xl-v2":
+            model_name = "DALL-E 3 XL V2"
+        elif model == "black-forest-labs/FLUX.1-schnell":
+            model_name = "FLUX.1 Schnell"
+        elif model == "dataautogpt3/FLUX-anime2":
+            model_name = "FLUX Anime 2"
+
+        add_to_history("Conversation", member_name, f"/img {prompt} | Model: {model_name}")
+
         url = f'https://api-inference.huggingface.co/models/{model}'
         headers = {
             'Authorization': f'Bearer {api_key}'
@@ -1934,14 +1946,14 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
         data = {
             'inputs': prompt
         }
-    
+
         def save_image(response):
             image_path = "system/RAM/gen-image/generated_image.png"
             os.makedirs(os.path.dirname(image_path), exist_ok=True)
             with open(image_path, 'wb') as f:
                 f.write(response.content)
             print("Image saved successfully as 'generated_image.png'!")
-    
+
         def handle_error(response):
             error_message = response.json().get('error', 'No error message')
             if response.status_code == 503:
@@ -1950,7 +1962,7 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
                 print(f"Rate limit exceeded. Error: {error_message}")
             else:
                 print(f"Failed to save image. Status code: {response.status_code}, Error: {error_message}")
-    
+
         def fetch_image_with_retries(url, headers, data):
             for attempt in range(max_retries):
                 response = requests.post(url, headers=headers, json=data)
@@ -1967,7 +1979,7 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
                         break
             print("Exceeded maximum retries or encountered a non-retryable error.")
             return False
-    
+
         success = False
         if model in ["ehristoforu/dalle-3-xl-v2", "black-forest-labs/FLUX.1-schnell", "dataautogpt3/FLUX-anime2"]:
             success = fetch_image_with_retries(url, headers, data)
@@ -1978,42 +1990,43 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
                 success = True
             else:
                 handle_error(response)
-    
+
         if success:
             image_path = "system/RAM/gen-image/generated_image.png"
             file_extension = image_path.split('.')[-1].lower()
             if file_extension == 'jpg':
                 file_extension = 'jpeg'
             file_path = os.path.join('system/RAM/read-img', f'image.{file_extension}')
-    
+
             try:
                 img = Image.open(image_path).convert('RGB') if file_extension == 'jpeg' else Image.open(image_path)
                 buffered = io.BytesIO()
                 img.save(buffered, format="PNG")
                 img_bytes = buffered.getvalue()
-    
+
                 response = model_V3.generate_content(img)  # Using the original language model
                 analysis_result = response.text.strip()
                 print(f"Image analysis: {analysis_result}")
-    
+
                 add_to_history_bot("Conversation", "Generated_image", analysis_result)
-    
+
             except Exception as e:
                 print(f"Error analyzing image: {e}")
                 analysis_result = "Error analyzing the image."
                 add_to_history("Conversation", "System", f"Error analyzing the image: {str(e)}")
-    
+
             embed = discord.Embed(title="Generated Image!",
-                                description=f"{prompt}\n",
-                                color=0x00ff00)
+                                  description=f"{prompt}\n",
+                                  color=0x00ff00)
             file = discord.File(image_path, filename="generated_image.png")
             embed.set_image(url="attachment://generated_image.png")
-            embed.set_footer(text=f"Generated by {interaction.user.display_name}\nModel: {model}")
+            embed.set_footer(text=f"Generated by {interaction.user.display_name}\nModel: {model_name}")
             await interaction.followup.send(file=file, embed=embed)
-    
+
             os.remove(image_path)
-    
+
         else:
-            await interaction.followup.send("An error occurred while generating the image.")
+            add_to_history("Conversation", "System", "Failed to generate the image after retries.")
+            await interaction.followup.send("An error occurred while generating the image. Please try again later or select a different model.")
 
 bot.run(TOKEN)
