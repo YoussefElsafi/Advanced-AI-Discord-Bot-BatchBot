@@ -26,6 +26,11 @@ Upload videos, and BatchBot will use powerful vision models to generate detailed
 ### 🎨 Image Generation
 Create stunning and personalized images using Hugging Face's Stable Diffusion. Generate anything from imaginative scenes to funny memes based on your text prompts.
 
+### 🎶 Music Generation
+Unleash your inner composer with the `/music` command! BatchBot now leverages powerful AI models from Hugging Face to generate unique musical compositions based on your prompts. Choose your sound from:
+  - `facebook/musicgen-small` (Default)
+  - `facebook/musicgen-stereo-small`
+
 ### 📺 YouTube Analysis
 Get summaries and transcripts from YouTube videos. BatchBot can analyze video URLs, extract content, and provide concise summaries.
 
@@ -36,7 +41,7 @@ Analyze and extract information from a variety of file types including PDFs, DOC
 Utilize DuckDuckGo's API for web searches. BatchBot provides summaries of the most relevant search results, making it easy to find the information you need.
 
 ### 🧠 Memory
-BatchBot can remember important information shared during conversations or stored via commands. This feature enables personalized interactions and a better understanding of your preferences.
+BatchBot can remember important information shared during conversations or stored via commands. This feature enables personalized interactions and a better understanding of your preferences. You can now use the `/memory_save` command to save important memories or information that you want BatchBot to retain.
 
 ### 🔤 Custom User Names
 Set a custom name for yourself in interactions with BatchBot, enhancing personalization and user experience.
@@ -78,40 +83,41 @@ To get BatchBot up and running on your Discord server, follow these steps:
 - An API Key from Google Generative AI (Gemini): [Gemini API Key](https://aistudio.google.com/app/apikey)
 - An API Key from Hugging Face: [Hugging Face API Key](https://huggingface.co/settings/tokens)
 
-
 ### 🛠️ Install Dependencies
 
 1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot.git
-   cd Advanced-AI-Discord-Bot-BatchBot
-   ```
-
+```
+git clone https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot.git
+cd Advanced-AI-Discord-Bot-BatchBot
+```
 2. Install the required Python packages:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```
+pip install -r requirements.txt
+```
 
 ### ⚙️ Configure Settings
 
 Edit the `system/config.py` file with the following content and replace the placeholders with your actual API keys and tokens:
 
-```python
+```
 TOKEN = "YOUR_DISCORD_BOT_TOKEN"
 API_KEY = "YOUR_GEMINI_API_KEY"
 HUGGING_FACE_API = "YOUR_HUGGING_FACE_API_KEY"
-# Add other configuration settings as needed
+DEFAULT_MUSIC_MODEL = "facebook/musicgen-small"
+limit_history = False
+history_limit = 100
+show_time = True
+custom_model = False
+custom_model_name = "gemini-1.5-flash"
+custom_model_tokens = 1048576
 ```
 
 ### 🚀 Run the Bot
 
 Start the bot using the following command:
 
-```bash
 python main.py
-```
 
 ## Usage
 
@@ -123,27 +129,4 @@ Interact with BatchBot using the following commands:
 - `works if you have aitoggle on`: Analyzes an image and provides a detailed description.
 - `no need for a command`: Summarizes a YouTube video and provides a transcript.
 - `no need for a command`: Analyzes a file and provides key insights.
-
-For a full list of commands, type `//help` in Discord after adding BatchBot to your server.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
-
-## Acknowledgements
-
-- [Google Generative AI](https://aistudio.google.com/app) for providing the advanced AI models.
-- [Hugging Face](https://huggingface.co/) for the image generation models.
-- [DuckDuckGo](https://duckduckgo.com/) for the web search API.
-- And all the amazing contributors who have helped improve BatchBot!
-
-## Support
-
-If you have questions or need assistance, you can:
-
-- Reach out via email: [Support](mailto:batchbothelp@gmail.com)
-- Open an issue on our [GitHub repository](https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot/issues)
-- Watch our [YouTube tutorial](https://youtu.be/ow-Cw8OLTdI) for setup instructions
-- Check our [Documentation](DOCUMENTATION.md) for detailed guides
-
-Enjoy using BatchBot! 🚀
+- `/music [prompt]`: Generates a music piece based on your text prompts.
