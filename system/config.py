@@ -3,7 +3,7 @@ TOKEN = "YOUR_DISCORD_BOT_TOKEN"
 #Gemini API KEY
 API_KEY = "YOUR_GEMINI_API_KEY"
 #Hugging Face API KEY
-HUGGING_FACE_API = "YOUR_HUGGING_FACE_API_KEY" # You can leave it but you will not have access to Image or music generation
+HUGGING_FACE_API = "YOUR_HUGGING_FACE_API_KEY" # You can leave it but you will not have access to Image generation
 #Discord Bot's Name
 NAME = "BatchBot" # Change to whatever you want!
 # Server Name
@@ -22,6 +22,7 @@ Image_Generator_Model = "stabilityai/stable-diffusion-xl-base-1.0" # model of th
 DEFAULT_MUSIC_MODEL = "facebook/musicgen-small" # Model of the music generation
 custom_model = False # Use a custom google gemini model
 custom_model_name = "gemini-1.5-flash" # Name of the custom model
+custom_model_tokens = 1048576 # Tokens of the custom model
 
 Image_Model = Image_Generator_Model
 if Image_Model == "stabilityai/stable-diffusion-xl-base-1.0":
@@ -38,15 +39,18 @@ sys_security = [
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
 ]
 
-if pro == True:
-    max_tokens = 2097152 
-    MODEL = "Gemini 1.5 Pro"
-elif pro == "True+":
-    max_tokens = 2097152 
-    MODEL = "Gemini 1.5 Pro Advanced"
-elif pro == False:
-    max_tokens = 1048576
-    MODEL = "Gemini 1.5 Flash"
+if custom_model:
+    max_tokens = custom_model_tokens
+else:
+    if pro == True:
+        max_tokens = 2097152 
+        MODEL = "Gemini 1.5 Pro"
+    elif pro == "True+":
+        max_tokens = 2097152 
+        MODEL = "Gemini 1.5 Pro Advanced"
+    elif pro == False:
+        max_tokens = 1048576
+        MODEL = "Gemini 1.5 Flash"
 
 # Configure the Google Generative AI
 gen_config = {
