@@ -11,18 +11,23 @@ server_name = "EPIC SERVER" # Replace with your server name
 
 # Config Settings
 ai_toggle = False # Start automatically with ai toggle on or off
-pro = False # Options (True (Gemini 1.5 Pro), True+ (gemini-1.5-pro-exp-0801), False (Gemini 1.5 Flash))
+pro = False # Options (True (Gemini 1.5 Pro), True+ (gemini-1.5-pro-exp-0827), False (Gemini 1.5 Flash))
 online_toggle = False # will activate always on bot (Under-Dev)
+limit_history = False  # Use a limited conversation history
+history_limit = 100     # Limit for conversation history (if limit_history is True)
+show_time = True # Makes the bot able to know what is the time and date and also the time that the messages was sent
 
-# Visualizer Settings (AI Generators)
-Image_Generator_Model = "stabilityai/stable-diffusion-xl-base-1.0" # May require to reinvite the bot to get the full changes
+# Models Settings
+Image_Generator_Model = "stabilityai/stable-diffusion-xl-base-1.0" # model of the image generator
+DEFAULT_MUSIC_MODEL = "facebook/musicgen-small" # Model of the music generation
+custom_model = False # Use a custom google gemini model
+custom_model_name = "gemini-1.5-flash" # Name of the custom model
 
 Image_Model = Image_Generator_Model
 if Image_Model == "stabilityai/stable-diffusion-xl-base-1.0":
     Image_Model_Name = "Stable Diffusion XL Base 1.0"
 else:
     Image_Model_Name = Image_Model
-
 
 
 sys_security = [
