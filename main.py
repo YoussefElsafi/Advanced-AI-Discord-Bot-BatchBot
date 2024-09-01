@@ -10,7 +10,7 @@ import asyncio
 import logging
 import random
 import time
-from system.config import TOKEN, NAME, API_KEY, sys_security, gen_config, gen_config2, ai_toggle, pro, HUGGING_FACE_API, Image_Model, DEFAULT_MUSIC_MODEL, history_limit, limit_history, show_time
+from system.config import TOKEN, NAME, API_KEY, sys_security, gen_config, gen_config2, ai_toggle, pro, HUGGING_FACE_API, Image_Model, DEFAULT_MUSIC_MODEL, history_limit, limit_history, show_time, custom_model, custom_model_name, custom_model_tokens
 from duckduckgo_search import DDGS
 import httpx
 from system.instruction import ins, video_ins, file_ins
@@ -165,19 +165,23 @@ async def change_name(ctx, *, new_name: str):
     global member_custom_name
     member_custom_name[ctx.author.id] = new_name
     await ctx.send(f"Your name has been changed to {new_name}.")
-
-if pro == True:
-    print("Model: Gemini 1.5 Pro")
-    print("Max Output Tokens: 2097152")
-    genai_model = "gemini-1.5-pro-latest"
-elif pro == "True+":
-    print("Model: Gemini 1.5 Pro Advanced")
-    print("Max Output Tokens: 2097152")
-    genai_model = "gemini-1.5-pro-exp-0827"
-elif pro == False:
-    print("Model: Gemini 1.5 Flash")
-    print("Max Output Tokens: 1048576")
-    genai_model = "gemini-1.5-flash"
+if custom_model:
+    print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}CUSTOM MODEL:{Style.RESET_ALL} {Fore.GREEN + Style.BRIGHT}{custom_model_name}{Style.RESET_ALL}")
+    print(f"Max Output Tokens: {custom_model_tokens}")
+    genai_model = custom_model_name
+else:
+    if pro == True:
+        print("Model: Gemini 1.5 Pro")
+        print("Max Output Tokens: 2097152")
+        genai_model = "gemini-1.5-pro-latest"
+    elif pro == "True+":
+        print("Model: Gemini 1.5 Pro Advanced")
+        print("Max Output Tokens: 2097152")
+        genai_model = "gemini-1.5-pro-exp-0827"
+    elif pro == False:
+        print("Model: Gemini 1.5 Flash")
+        print("Max Output Tokens: 1048576")
+        genai_model = "gemini-1.5-flash"
 
 
 # Configure the Google Generative AI
