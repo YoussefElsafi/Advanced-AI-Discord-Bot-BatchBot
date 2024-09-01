@@ -10,10 +10,10 @@ import asyncio
 import logging
 import random
 import time
-from system.config import TOKEN, NAME, API_KEY, sys_security, gen_config, gen_config2, ai_toggle, pro, HUGGING_FACE_API, Image_Model
+from system.config import TOKEN, NAME, API_KEY, sys_security, gen_config, gen_config2, ai_toggle, pro, HUGGING_FACE_API, Image_Model, DEFAULT_MUSIC_MODEL, history_limit, limit_history, show_time
 from duckduckgo_search import DDGS
 import httpx
-from system.instruction import ins, video_ins
+from system.instruction import ins, video_ins, file_ins
 from system.instructionV import insV, insV2
 from discord.utils import get
 import io
@@ -43,6 +43,7 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 
 # File to store conversation history
 HISTORY_FILE = 'system/data/user_data.json'
+CHANNEL_HISTORY_FILE = 'system/data/channel_data.json'
 
 # Function to load conversation history from file
 def load_history():
@@ -66,8 +67,14 @@ def add_to_history(user_id, member_name, message):
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
     if user_id not in conversation_history:
         conversation_history[user_id] = []
-    conversation_history[user_id].append(f"{timestamp} - {member_name}: {message}")
-    save_history()
+    if show_time:
+        conversation_history[user_id].append(f"{timestamp} - {member_name}: {message}")
+    else:
+        conversation_history[user_id].append(f"{member_name}: {message}")
+    # Truncate history if limit_history is True 
+    if limit_history and len(conversation_history[user_id]) > history_limit:
+        conversation_history[user_id] = conversation_history[user_id][-history_limit:]
+    save_history() 
 
 # Function to add a message to the conversation history for the bot
 def add_to_history_bot(user_id, member_name, message):
@@ -166,7 +173,7 @@ if pro == True:
 elif pro == "True+":
     print("Model: Gemini 1.5 Pro Advanced")
     print("Max Output Tokens: 2097152")
-    genai_model = "gemini-1.5-pro-exp-0801"
+    genai_model = "gemini-1.5-pro-exp-0827"
 elif pro == False:
     print("Model: Gemini 1.5 Flash")
     print("Max Output Tokens: 1048576")
@@ -184,6 +191,13 @@ model = genai.GenerativeModel(
 )
 
 # Other Models...
+model_flash = genai.GenerativeModel( 
+    model_name="gemini-1.5-flash",
+    generation_config=gen_config,
+    system_instruction=(ins),
+    safety_settings=sys_security
+)
+
 model_pro_latest = genai.GenerativeModel( 
     model_name="gemini-1.5-pro-latest",
     generation_config=gen_config,
@@ -223,13 +237,6 @@ model_V3 = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
     generation_config=gen_config,
     system_instruction=(insV2),
-    safety_settings=sys_security
-)
-
-model2 = genai.GenerativeModel( 
-    model_name="gemini-pro-vision",
-    generation_config=gen_config,
-    system_instruction=(ins),
     safety_settings=sys_security
 )
 
@@ -290,32 +297,6 @@ async def report_bug(ctx, *, report: str):
 if not os.path.exists('system/RAM/read-img'):
     os.makedirs('system/RAM/read-img')
 
-@bot.command(name='image0')
-async def read_image(ctx, model_choice: str = 'model2'):
-    """Saves image attachments to the 'read-img' folder with a fixed name, processes them, and then deletes the file."""
-    member_name = ctx.author.display_name
-    if ctx.message.attachments:
-        for attachment in ctx.message.attachments:
-            if attachment.filename.lower().endswith(('png', 'jpg', 'jpeg')):
-                await handle_image_attachment_vision(attachment, ctx.channel)
-            else:
-                await ctx.send("Unsupported file format. Please upload a PNG, JPG, or JPEG image.")
-    else:
-        await ctx.send("No image attachments found.")
-
-@bot.command(name='image')
-async def read_image(ctx, model_choice: str = 'model'):
-    """Saves image attachments to the 'read-img' folder with a fixed name, processes them, and then deletes the file."""
-    member_name = ctx.author.display_name
-    if ctx.message.attachments:
-        for attachment in ctx.message.attachments:
-            if attachment.filename.lower().endswith(('png', 'jpg', 'jpeg')):
-                await handle_image_attachment(attachment, ctx.channel)
-            else:
-                await ctx.send("Unsupported file format. Please upload a PNG, JPG, or JPEG image.")
-    else:
-        await ctx.send("No image attachments found.")
-
 @bot.command(name='feedback')
 async def feedback(ctx, *, feedback: str):
     # Prepare the report entry
@@ -332,6 +313,20 @@ async def feedback(ctx, *, feedback: str):
 
     add_to_history("Conversation", member_name, f"System: {member_name} sent a feedback! `{feedback}`")
     await ctx.send(f"Thank you for your feedback, {member_name}. `{feedback}` has been logged!")
+
+
+# Function to save to core memory using /memory_save command
+@bot.command(name='memory_save', help='Save a message to the core memory.')
+async def memory_save(ctx, *, message: str):
+    """Saves a message to the core memory."""
+    member_name = ctx.author.display_name
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+    response_name = model_name.generate_content(f"SYSTEM: {message}")
+    save_memory(f"{timestamp} - {response_name.text}: ", message)
+    add_to_history("Conversation", member_name, f"/memory_save {message}")
+    add_to_history("Conversation", "System", f"Saved '{message}' to core memory!")
+    await ctx.send(f"Saved '{message}' to core memory!")
+
 
 # Function to check if the URL is a YouTube URL
 def is_youtube_url(url):
@@ -467,28 +462,28 @@ async def handle_image_attachment(attachment, channel, prompt=None):
             response = model.generate_content(combined_input)
             response_text = response.text.strip()
             add_to_history_bot("Conversation", "", response_text)
-            if response_text == "/img":
-                try:
-                    response2 = model_V2.generate_content(img)
-                    response_text2 = response2.text.strip()
-                    add_to_history("Conversation", "Additional Image details", response_text2)
-                    print("Used Model Flash")
-                    print(" ")
-                except Exception as e:
-                    print(f"Failed to run Model Flash, Please try again Later | ERROR: {e}")
-                    print(" ")
-                response = model.generate_content("System: Say /img again to confirm you wanna generate an image")
-                response_text = response.text.strip()
-                add_to_history_bot("Conversation", "", response_text)
-                await reading_message.delete()
-                if response_text == "/img": # //img2
-                    add_to_history_bot("Conversation", "", "/img")
+            if response_text.startswith("/img"):
+                # Extract the text after "/img"
+                text_after_command = response_text[len("/img"):].strip() # //img
+
+                if text_after_command:
+                    # Generate the text after "/img"
+                    prompt_response_text = text_after_command
+                    add_to_history_bot("Conversation", "", f"/img {prompt_response_text}")
+                else:
                     history = "\n".join(conversation_history["Conversation"])
                     full_prompt = f"{history}\nVisualizer: What image do you want to generate?: "
                     response = model.generate_content(full_prompt)
                     prompt_response_text = response.text.strip()
-                    gen = await channel.send("Generating image...")
-
+                    add_to_history_bot("Conversation", "", f"/img {prompt_response_text}")
+                await reading_message.delete()
+                generating = await channel.send("Generating image...")
+                add_to_history("Conversation", "System", f"Generating image: {prompt_response_text}")
+                if HUGGING_FACE_API == "HUGGING_FACE_API_KEY":
+                    add_to_history("Conversation", "Error", "Failed to generate image! Invalid API Key.")
+                    await channel.send("Failed to generate image! Invalid API Key.")
+                    print("Failed to generate image! Invalid API Key, Please enter a valid hugging face API Key into system/config.py!")
+                else:
                     # Image Generation (Using Hugging Face Stable Diffusion)
                     api_key = HUGGING_FACE_API
 
@@ -542,7 +537,7 @@ async def handle_image_attachment(attachment, channel, prompt=None):
 
 
                             # Design and send the embed
-                            await gen.delete()
+                            await generating.delete()
                             embed = discord.Embed(title="Generated Image!",
                                                 description=f"{prompt_response_text}",
                                                 color=0x00ff00)
@@ -550,23 +545,24 @@ async def handle_image_attachment(attachment, channel, prompt=None):
                             embed.set_footer(text=f"Generated by {NAME}")
                             await channel.send(file=discord.File(image_path), embed=embed)
                             add_to_history("Conversation", "Generated Image Details", response_text)
-                            await channel.send(response_text)
+                            await send_message(channel, response_text)
 
                             os.remove(image_path)
                         except Exception as e:
-                                await channel.send("Error processing the image, Please try again later.")
-                                add_to_history("Conversation", "System", f"Error processing the image: {str(e)}")
-                                print(f"Error processing image: {e}")
-                                history = "\n".join(conversation_history["Conversation"])
-                                full_prompt = f"{history}\nError processing the image: {str(e)}"
-                                response = model.generate_content(full_prompt)  # Using the original language model
-                                response_text = response.text.strip()
-                                add_to_history_bot("Conversation", "", response_text)
-                                await channel.send(response_text)
+                            await channel.send("Error processing the image, Please try again later.")
+                            add_to_history("Conversation", "System", f"Error processing the image: {str(e)}")
+                            print(f"Error processing image: {e}")
+                            history = "\n".join(conversation_history["Conversation"])
+                            full_prompt = f"{history}\nError processing the image: {str(e)}"
+                            response = model.generate_content(full_prompt)  # Using the original language model
+                            response_text = response.text.strip()
+                            add_to_history_bot("Conversation", "", response_text)
+                            await channel.send(response_text)
 
-                        else:
-                            print('Error:', response.status_code, response.text)
-                            await channel.send("An error occurred while generating the image.")
+                    else:
+                        print('Error:', response.status_code, response.text)
+                        add_to_history("Conversation", "Error", f"Failed to generate image: {response.status_code} | {response.text}")
+                        await channel.send("An error occurred while generating the image.")
             else:
                 await channel.send(response_text)
                 await reading_message.delete()
@@ -659,7 +655,7 @@ model_vid = genai.GenerativeModel(
 )
 
 model_vid_a = genai.GenerativeModel(
-    model_name="gemini-1.5-pro-latest",
+    model_name="gemini-1.5-pro-exp-0827",
     generation_config=generation_config,
     system_instruction=(video_ins),
 )
@@ -670,36 +666,54 @@ model_vid_flash = genai.GenerativeModel(
     system_instruction=(video_ins),
 )
 
+model_file = genai.GenerativeModel(
+    model_name="gemini-1.5-pro-latest",
+    generation_config=generation_config,
+    system_instruction=(file_ins),
+)
+
+model_file_a = genai.GenerativeModel(
+    model_name="gemini-1.5-pro-exp-0827",
+    generation_config=generation_config,
+    system_instruction=(file_ins),
+)
+
+model_file_flash = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+    system_instruction=(file_ins),
+)
 
 
-#    else:
-#        print('Error:', response.status_code, response.text)
-#        await interaction.followup.send("An error occurred while generating the image.")
-
-
-
-async def handle_video_attachment(attachment, channel, prompt=None):
-    """Handles the video attachment processing and deletion."""
+async def handle_media_attachment(attachment, channel, prompt=None):
+    """Handles the video and audio attachment processing and deletion."""
     file_extension = attachment.filename.split('.')[-1].lower()
-    if file_extension not in ('mp4', 'avi', 'mkv', 'mov', 'mp3'):
-        await channel.send("Unsupported video format. Please upload a supported video format.")
+    supported_video_formats = ('mp4', 'avi', 'mkv', 'mov')
+    supported_audio_formats = ('mp3', 'wav', 'aac')
+
+    if file_extension not in supported_video_formats + supported_audio_formats:
+        await channel.send("Unsupported media format. Please upload a supported video or audio format.")
         return
 
-    # Ensure the directory exists
-    directory = 'system/RAM/read-vid'
+    # Determine whether it's a video or audio file
+    is_video = file_extension in supported_video_formats
+    media_type = "video" if is_video else "audio"
+
+    # Set the directory based on media type
+    directory = 'system/RAM/read-vid' if is_video else 'system/RAM/read-audio'
     os.makedirs(directory, exist_ok=True)
 
-    file_path = os.path.join(directory, 'video.mp4')
+    file_path = os.path.join(directory, 'media_file.' + file_extension)
 
     try:
-        video_data = await attachment.read()
+        media_data = await attachment.read()
         with open(file_path, 'wb') as file:
-            file.write(video_data)
+            file.write(media_data)
 
-        # Upload the video to Gemini
+        # Upload the media to Gemini
         try:
-            analyze = await channel.send("Analyzing Video...")
-            gemini_file = upload_to_gemini(file_path, mime_type=f'video/{file_extension}')
+            analyze = await channel.send(f"Analyzing {media_type.capitalize()}...")
+            gemini_file = upload_to_gemini(file_path, mime_type=f'{media_type}/{file_extension}')
             wait_for_files_active([gemini_file])
 
             # Prepare the text input (just the history)
@@ -709,9 +723,9 @@ async def handle_video_attachment(attachment, channel, prompt=None):
             user_prompt = { 
                 "role": "user",
                 "parts": [text_input, gemini_file],
-               }
+            }
 
-            # Generate response with model_pro (assuming it's suitable for video)
+            # Generate response with model_pro (assuming it's suitable for both video and audio)
             try:
                 chat_session = model_pro_latest.start_chat(history=[])
                 response = chat_session.send_message(user_prompt)
@@ -719,9 +733,7 @@ async def handle_video_attachment(attachment, channel, prompt=None):
                 add_to_history_bot("Conversation", "", response_text)
                 await analyze.delete()
                 await channel.send(response_text)
-                print(" ")
                 print("Used model Pro")
-                print(" ")
             except Exception as e3:
                 try:
                     chat_session = model_pro_advanced.start_chat(history=[])
@@ -730,66 +742,50 @@ async def handle_video_attachment(attachment, channel, prompt=None):
                     add_to_history_bot("Conversation", "", response_text)
                     await analyze.delete()
                     await channel.send(response_text)
-                    print(" ")
                     print("Used Model Pro Advanced")
-                    print(" ")
                 except Exception as e2:
                     try:
-                        chat_session = model.start_chat(history=[])
+                        chat_session = model_flash.start_chat(history=[])
                         response = chat_session.send_message(user_prompt)
                         response_text = response.text.strip()
                         add_to_history_bot("Conversation", "", response_text)
                         await analyze.delete()
                         await channel.send(response_text)
-                        print(" ")
                         print("Used Model Flash")
-                        print(" ")
                     except Exception as e:
                         print(f"Failed to run Model Flash, Please try again Later | ERROR: {e}")
-                        print(" ")
                     print(f"Failed running Model Pro Advanced, Running Model Flash | ERROR: {e2}")
-                    print(" ")
                 print(f"Failed running Model Pro, Running Model Pro Advanced | ERROR: {e3}")
-                print(" ")
 
             try:
                 response2 = model_vid.generate_content(gemini_file)
                 response_text2 = response2.text.strip()
-                add_to_history("Conversation", "Additional Video details", response_text2)
-                print(" ")
+                add_to_history("Conversation", "Additional Media details", response_text2)
                 print("Used model Pro")
-                print(" ")
             except Exception as e3:
                 try:
                     response2 = model_vid_a.generate_content(gemini_file)
                     response_text2 = response2.text.strip()
-                    add_to_history("Conversation", "Additional Video details", response_text2)
-                    print(" ")
+                    add_to_history("Conversation", "Additional Media details", response_text2)
                     print("Used Model Pro Advanced")
-                    print(" ")
                 except Exception as e2:
                     try:
                         response2 = model_vid_flash.generate_content(gemini_file)
                         response_text2 = response2.text.strip()
-                        add_to_history("Conversation", "Additional Video details", response_text2)
-                        print(" ")
+                        add_to_history("Conversation", "Additional Media details", response_text2)
                         print("Used Model Flash")
-                        print(" ")
                     except Exception as e:
                         print(f"Failed to run Model Flash, Please try again Later | ERROR: {e}")
-                        print(" ")
                     print(f"Failed running Model Pro Advanced, Running Model Flash | ERROR: {e2}")
-                    print(" ")
                 print(f"Failed running Model Pro, Running Model Pro Advanced | ERROR: {e3}")
-                print(" ")
 
         except Exception as e:
-            await channel.send("Error processing the video, please try again later.")
-            add_to_history("Conversation", "System", f"Error processing the video: {str(e)}")
-            print(f"Error processing video: {e}")
+            await channel.send("Error processing the media, please try again later.")
+            add_to_history("Conversation", "System", f"Error processing the media: {str(e)}")
+            print(f"Error processing media: {e}")
 
         finally:
-            # Delete the temporary video file
+            # Delete the temporary media file
             if os.path.exists(file_path):
                 os.remove(file_path)
                 print(f"Deleted file: {file_path}")
@@ -799,7 +795,8 @@ async def handle_video_attachment(attachment, channel, prompt=None):
         print(f"Error reading attachment: {e}")
 
 async def handle_files_attachment(attachment, channel, prompt=None):
-    """Handles various text-based file attachments (PDF, DOCX, Markdown, Python, JavaScript, Batch, Excel, PowerPoint, CSV, TXT, JSON, LOG, HTML, CSS, and others) and processes them."""
+    """Handles various text-based file attachments and processes them."""
+
     file_extension = attachment.filename.split('.')[-1].lower()
     directory = 'system/RAM/read-files'
     file_path = os.path.join(directory, attachment.filename)
@@ -818,129 +815,76 @@ async def handle_files_attachment(attachment, channel, prompt=None):
 
         reading_message = await channel.send(f"Analyzing the file: {attachment.filename}...")
 
-        text_content = ""
-        if file_extension in ['pdf']:
-            # Handle PDF files
-            pdf_document = fitz.open(file_path)
-            for page_num in range(len(pdf_document)):
-                page = pdf_document.load_page(page_num)
-                text_content += page.get_text()
+        # Upload the file to Google Generative AI
+        file = genai.upload_file(path=file_path, display_name=attachment.filename)
 
-        elif file_extension in ['docx']:
-            # Handle DOCX files
-            doc = Document(file_path)
-            for para in doc.paragraphs:
-                text_content += para.text + "\n"
+        # Choose a Gemini model for processing
+        model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest")
 
-        elif file_extension in ['md', 'markdown']:
-            # Handle Markdown files
-            with open(file_path, 'r') as file:
-                text_content = file.read()
+        # Generate a response based on the file content and the prompt
+        history = "\n".join(conversation_history["Conversation"])
+        full_prompt = f"{history}\n{attachment.filename}: {prompt or 'Please analyze this file.'}"
 
-        elif file_extension in ['py']:
-            # Handle Python files
-            with open(file_path, 'r') as file:
-                text_content = file.read()
-
-        elif file_extension in ['js']:
-            # Handle JavaScript files
-            with open(file_path, 'r') as file:
-                text_content = file.read()
-
-        elif file_extension in ['bat']:
-            # Handle Batch files
-            with open(file_path, 'r') as file:
-                text_content = file.read()
-
-        elif file_extension in ['xlsx']:
-            # Handle Excel files
-            workbook = openpyxl.load_workbook(file_path)
-            for sheet in workbook.sheetnames:
-                sheet = workbook[sheet]
-                for row in sheet.iter_rows(values_only=True):
-                    text_content += ' | '.join([str(cell) for cell in row]) + "\n"
-
-        elif file_extension in ['pptx']:
-            # Handle PowerPoint files
-            presentation = Presentation(file_path)
-            for slide in presentation.slides:
-                for shape in slide.shapes:
-                    if hasattr(shape, "text"):
-                        text_content += shape.text + "\n"
-
-        elif file_extension in ['csv']:
-            # Handle CSV files
-            with open(file_path, 'r') as file:
-                reader = csv.reader(file)
-                for row in reader:
-                    text_content += ' | '.join(row) + "\n"
-
-        elif file_extension in ['txt']:
-            # Handle TXT files
-            with open(file_path, 'r') as file:
-                text_content = file.read()
-
-        elif file_extension in ['json']:
-            # Handle JSON files
-            with open(file_path, 'r') as file:
-                json_data = json.load(file)
-                text_content = json.dumps(json_data, indent=4)
-
-        elif file_extension in ['log']:
-            # Handle LOG files
-            with open(file_path, 'r') as file:
-                text_content = file.read()
-
-        elif file_extension in ['html']:
-            # Handle HTML files
-            with open(file_path, 'r') as file:
-                text_content = file.read()
-
-        elif file_extension in ['css']:
-            # Handle CSS files
-            with open(file_path, 'r') as file:
-                text_content = file.read()
-
-        elif file_extension in ['mcmeta']:
-            # Handle MCMETA files
-            with open(file_path, 'r') as file:
-                text_content = file.read()
-
-        elif file_extension in ['ppt', 'doc', 'xls']:
-            # Handle older Microsoft Office formats (DOC, XLS, PPT)
-            doc = fitz.open(file_path)
-            for page_num in range(len(doc)):
-                page = doc.load_page(page_num)
-                text_content += page.get_text()
-
-        else:
-            # Handle any other text-based files
-            with open(file_path, 'r') as file:
-                text_content = file.read()
+        try:
+            response = model.generate_content([file, full_prompt])
+            response_text = response.text.strip()
+            print("Used Gemini-1.5-Pro-latest")
+        except Exception as e3:
+            print(f"Failed running Gemini-1.5-Flash, trying Model Pro Advanced | ERROR: {e3}")
+            try:
+                response = model_pro_advanced.generate_content([file, full_prompt])
+                response_text = response.text.strip()
+                print("Used Model Pro Advanced")
+            except Exception as e2:
+                print(f"Failed running Model Pro Advanced, trying Model Flash | ERROR: {e2}")
+                try:
+                    chat_session = model.start_chat(history=[])
+                    response = chat_session.send_message(full_prompt)
+                    response_text = response.text.strip()
+                    print("Used Model Flash")
+                except Exception as e:
+                    print(f"Failed to run all Models, Please try again Later | ERROR: {e}")
+                    response_text = "Sorry, I'm having trouble processing your request right now. Please try again later."
 
         # Add to conversation history
         add_to_history("Conversation", "System", f"{attachment.filename} received and processed")
-        history = "\n".join(conversation_history["Conversation"])
-
-        text_part = {'text': text_content}
-        combined_input = {'parts': [text_part]}
-
-        # Generate a response based on the file content
-        add_to_history("Conversation", f"{attachment.filename} Details", text_content)
-        response = model.generate_content(combined_input)
-        response_text = response.text.strip()
         add_to_history_bot("Conversation", "", response_text)
+
+        # Send the response to the channel
         await channel.send(response_text)
         await reading_message.delete()
+        try:
+            response2 = model_file.generate_content([file, attachment.filename])
+            response_text2 = response2.text.strip()
+            add_to_history("Conversation", "Additional file details", response_text2)
+            print("Used model Pro")
+        except Exception as e3:
+            try:
+                response2 = model_file_a.generate_content([file, attachment.filename])
+                response_text2 = response2.text.strip()
+                add_to_history("Conversation", "Additional file details", response_text2)
+                print("Used Model Pro Advanced")
+            except Exception as e2:
+                try:
+                    response2 = model_file_flash.generate_content([file, attachment.filename])
+                    response_text2 = response2.text.strip()
+                    add_to_history("Conversation", "Additional file details", response_text2)
+                    print("Used Model Flash")
+                except Exception as e:
+                    print(f"Failed to run Model Flash, Please try again Later | ERROR: {e}")
+                print(f"Failed running Model Pro Advanced, Running Model Flash | ERROR: {e2}")
+            print(f"Failed running Model Pro, Running Model Pro Advanced | ERROR: {e3}")
 
     except Exception as e:
+        await channel.send(f"Error processing file: {e}")
         print(f"Error processing file: {e}")
 
-
     finally:
+        # Clean up the local file
         if os.path.exists(file_path):
             os.remove(file_path)
             print(f"Deleted file: {file_path}")
+
 
 def split_long_message(message, max_length=2000):
     """
@@ -948,27 +892,10 @@ def split_long_message(message, max_length=2000):
     """
     return [message[i:i + max_length] for i in range(0, len(message), max_length)]
 
-
-
-# Function to detect URLs in a message
-def contains_url(message):
-    url_pattern = re.compile(r'(https?://\S+)')
-    return url_pattern.findall(message)
-
-# Function to scrape data from a URL
-def scrape_url(url):
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
-        # Print first 500 characters of the response
-        response_content = response.text[:99999999999999]
-        return f"Response Status Code: {response.status_code}\n\nResponse Content (First 500 chars): {response_content}"
-    except requests.RequestException as e:
-        return f"Error fetching the URL: {e}"
-
 # Event handler to process messages
 @bot.event
 async def on_message(message):
+    global model
     global ai_toggle
     if message.author == bot.user:
         return
@@ -976,7 +903,6 @@ async def on_message(message):
     # Retrieve the custom name if set, otherwise use the default display name
     display_name = member_custom_name.get(message.author.id, message.author.display_name)
     member_name = display_name
-    urls = contains_url(message.content)
 
     if ai_toggle and not message.content.startswith("/") and message.guild:
         add_to_history("Conversation", display_name, message.content)
@@ -987,28 +913,12 @@ async def on_message(message):
             for attachment in message.attachments:
                 if attachment.filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif')):
                     await handle_image_attachment(attachment, message.channel, prompt=message.content)
-                elif attachment.filename.lower().endswith(('mp4', 'avi', 'mkv', 'mov', 'mp3')):
-                    await handle_video_attachment(attachment, message.channel)
+                elif attachment.filename.lower().endswith(('mp4', 'avi', 'mkv', 'mov', 'mp3', 'wav', 'aac')):
+                    await handle_media_attachment(attachment, message.channel)
+
                 elif attachment.filename.lower().endswith(('pdf', 'docx', 'md', 'markdown', 'py', 'js', 'bat', 'xlsx', 'pptx', 'csv', 'txt', 'json', 'log', 'html', 'css', 'mcmeta', 'ppt', 'doc', 'xls')):
                     await handle_files_attachment(attachment, message.channel, prompt=message.content)
-
-        elif urls:
-            for url in urls:
-                result = scrape_url(url)
-                add_to_history("Conversation", "Web-Scrape", f"Data from {url}:\n{result}")
-                try:
-                    async with message.channel.typing():
-                        history = "\n".join(conversation_history["Conversation"])
-                        full_prompt = f"Conversation History: {history}\n{display_name}: {message.content}"
-                        response = model.generate_content(full_prompt)
-                        response_text = response.text.strip()
-                        add_to_history_bot("Conversation", "", response_text)
-                        await send_message(message.channel, response_text)
-                except Exception as e:
-                    print(f"Error generating content: {e}")
-                    add_to_history("Conversation", "System", f"Error generating content: {str(e)}")
-                    await message.channel.send("An error occurred while generating the response.")
-            await bot.process_commands(message)
+                    
         else:
             try:
                 async with message.channel.typing():
@@ -1115,6 +1025,85 @@ async def on_message(message):
                                 print('Error:', response.status_code, response.text)
                                 add_to_history("Conversation", "Error", f"Failed to generate image: {response.status_code} | {response.text}")
                                 await message.channel.send("An error occurred while generating the image.")
+
+                    elif response_text.startswith("/music"):
+                        # Extract the text after "/music"
+                        text_after_command = response_text[len("/music"):].strip()
+
+                        if text_after_command:
+                            # Generate music based on the prompt
+                            prompt = text_after_command
+                            add_to_history_bot("Conversation", " ", f"/music {prompt}")
+                        else:
+                            # Ask for a prompt if none is provided
+                            add_to_history_bot("Conversation", " ", "/music")
+                            history = "\n".join(conversation_history["Conversation"])
+                            add_to_history("Conversation", "System", "What kind of music do you want to generate?")
+                            full_prompt = f"{history}\nSystem: What kind of music do you want me to generate?: "
+                            response = model.generate_content(full_prompt)
+                            prompt = response.text.strip()
+                            add_to_history_bot("Conversation", " ", prompt)
+
+                        # Music Generation Logic (Integrated from generate_music function)
+                        if HUGGING_FACE_API == "YOUR_HUGGING_FACE_API_KEY":
+                            await message.channel.send("Sorry, You have entered an Invalid Hugging Face API Key!")
+                            return
+
+                        await message.channel.send("Generating Music...")  # Indicate that music generation is starting
+
+                        api_key = HUGGING_FACE_API
+                        max_retries = 10
+                        backoff_factor = 3
+
+                        music_model = DEFAULT_MUSIC_MODEL  # Default model
+                        url = f'https://api-inference.huggingface.co/models/{music_model}'
+                        headers = {'Authorization': f'Bearer {api_key}'}
+                        data = {'inputs': prompt}
+
+                        def save_audio(response):
+                            audio_dir = "system/RAM/gen-music"
+                            os.makedirs(audio_dir, exist_ok=True)
+                            audio_path = os.path.join(audio_dir, "generated_music.wav")
+                            with open(audio_path, 'wb') as f:
+                                f.write(response.content)
+                            logging.info(f"Audio saved successfully as '{audio_path}'!")
+
+                        def handle_error(response):
+                            error_message = response.json().get('error', 'No error message')
+                            if response.status_code == 503:
+                                logging.error(f"Service unavailable. Error: {error_message}")
+                            elif response.status_code == 429:
+                                logging.error(f"Rate limit exceeded. Error: {error_message}")
+                            else:
+                                logging.error(f"Failed to save audio. Status code: {response.status_code}, Error: {error_message}")
+
+                        def fetch_audio_with_retries(url, headers, data):
+                            for attempt in range(max_retries):
+                                response = requests.post(url, headers=headers, json=data)
+                                if response.ok:
+                                    save_audio(response)
+                                    return True
+                                else:
+                                    handle_error(response)
+                                    if response.status_code in [503, 429]:
+                                        wait_time = backoff_factor ** attempt
+                                        logging.info(f"Retrying in {wait_time} seconds...")
+                                        time.sleep(wait_time)
+                                    else:
+                                        break
+                            logging.error("Exceeded maximum retries or encountered a non-retryable error.")
+                            return False
+
+                        success = fetch_audio_with_retries(url, headers, data)
+                        if success:
+                            audio_path = "system/RAM/gen-music/generated_music.wav"
+                            file = discord.File(audio_path, filename="generated_music.wav")
+                            await send_message(message.channel, f"Successfully generated a music of `{prompt}`")
+                            await message.channel.send(file=file)
+                            os.remove(audio_path)
+                        else:
+                            await message.channel.send("An error occurred while generating the music. Please try again later.")
+
                     elif response_text.startswith("//#m3m0ry9(c0r3//"):
                         # Extract the text after "//#m3m0ry9(c0r3//"
                         text_after_command = response_text[len("//#m3m0ry9(c0r3//"):].strip()
@@ -1270,7 +1259,7 @@ async def test(interaction: discord.Interaction):
     await interaction.response.send_message("Hello World!")
 
 @bot.command(name="test")
-async def test(ctx):
+async def test2(ctx):
     await ctx.send("Hello World!")
 
 
@@ -1307,19 +1296,8 @@ async def aitoggle(ctx, Toggle: str):
         add_to_history("Conversation", member_name, f"/aitoggle {Toggle}")
         add_to_history("Conversation", "System", f"{Toggle} is an invalid option. Use 'on' or 'off'.")
 
-@bot.command()
-async def join(ctx):
-    if ctx.author.voice:
-        channel = ctx.author.voice.channel
-        await channel.connect()
-
-@bot.command()
-async def leave(ctx):
-    if ctx.voice_client:
-        await ctx.guild.voice_client.disconnect()
-
 #VOICE CHAT (UNDER-DEVELOPMENT)
-@bot.command(name='vc', help='VoiceChat with BatchBot')
+@bot.command(name='vc', help='VoiceChat with BatchBot (Under-Development)')
 async def vc(ctx, action, channel_name=None):
     member = ctx.author.display_name
     if action == 'join':
@@ -1358,9 +1336,6 @@ async def vc(ctx, action, channel_name=None):
         add_to_history("Conversation", "System", f"{action} is Invalid action. Use 'join' or 'leave'.")
         await ctx.send(f"{action} is Invalid action. Use 'join' or 'leave'.")
 
-
-
-
 # Function to send a random image from the 'images' directory
 async def send_random_image(ctx, num_images=1):
     # List all files in the images directory
@@ -1391,7 +1366,7 @@ async def send_random_image(ctx, num_images=1):
         await ctx.send(file=file)
         os.remove(file_path)  # Delete the image file after sending
 
-@bot.command(name="search*img")
+@bot.command(name="search_img")
 async def rimage(ctx, *, query: str):
     # Parse the query to get the number of images requested
     try:
@@ -1490,11 +1465,11 @@ async def search(ctx, *, query: str):
         add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
         add_to_history("Conversation", member_name, f"/search {query}")
 
-@bot.command(name="search*yt")
-async def search(ctx, *, query: str):
+@bot.command(name="search_yt")
+async def search_yt(ctx, *, query: str):
     member_name = ctx.author.display_name
     search_query = f"Youtube Video: {query}"
-    add_to_history("Conversation", member_name, f"/search*yt {query}")
+    add_to_history("Conversation", member_name, f"/search_yt {query}")
     web = await ctx.send(f"Searching Youtube...")
 
     try:
@@ -1532,7 +1507,7 @@ async def search(ctx, *, query: str):
         add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
         add_to_history("Conversation", member_name, f"/search {query}")
 
-@bot.command(name="search*save")
+@bot.command(name="search_save")
 async def search_save(ctx, *, query: str):
     member_name = ctx.author.display_name
     search_query = query
@@ -1551,57 +1526,57 @@ async def search_save(ctx, *, query: str):
 
         save_search(query, results)
 
-        add_to_history("Conversation", member_name, f"/search*save {query}")
+        add_to_history("Conversation", member_name, f"/search_save {query}")
         add_to_history("Conversation", "Search", results)
         add_to_history("Conversation", "System", f"Successfully searched for `{query}` and saved it to saved searches!")
         await ctx.send(f"Successfully searched for `{query}` and saved it to saved searches!")
     except Exception as e:
         await ctx.send(f"Sorry, it seems like you have reached the limit for the web search. Please try again later.")
         add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
-        add_to_history("Conversation", member_name, f"/search*save {query}")
+        add_to_history("Conversation", member_name, f"/search_save {query}")
 
-@bot.command(name="search*view")
+@bot.command(name="search_view")
 async def search_view(ctx):
     member_name = ctx.author.display_name
     saved_searches = load_saved_searches()
     if saved_searches:
-        add_to_history("Conversation", member_name, "/search*view")
+        add_to_history("Conversation", member_name, "/search_view")
         add_to_history("Conversation", "System", f"Saved Searches:\n{saved_searches}")
         await ctx.send(f"Saved Searches:\n{saved_searches}")
     else:
         await ctx.send("No saved searches found.")
-        add_to_history("Conversation", member_name, "/search*view")
+        add_to_history("Conversation", member_name, "/search_view")
         add_to_history("Conversation", "System", "No saved searches found.")
 
 
-@bot.command(name="search*list")
+@bot.command(name="search_list")
 async def search_list(ctx):
     member_name = ctx.author.display_name
     searches_list = get_saved_searches_list()
     if searches_list:
-        add_to_history("Conversation", member_name, "/search*list")
+        add_to_history("Conversation", member_name, "/search_list")
         add_to_history("Conversation", "System", f"Saved Searches List:\n{searches_list}")
         await ctx.send(f"Saved Searches List:\n{searches_list}")
 
     else:
-        add_to_history("Conversation", member_name, "/search*list")
+        add_to_history("Conversation", member_name, "/search_list")
         add_to_history("Conversation", "System", "No saved searches found.")
         await ctx.send("No saved searches found.")
 
-@bot.command(name="search*remove")
+@bot.command(name="search_remove")
 async def search_remove(ctx, *, query_or_number: str):
     member_name = ctx.author.display_name
     remove_saved_search(query_or_number)
     if query_or_number:
-        add_to_history("Conversation", member_name, "/search*list")
+        add_to_history("Conversation", member_name, f"/search_remove {query_or_number}")
         add_to_history("Conversation", "System", f"Successfully removed search `{query_or_number}`.")
         await ctx.send(f"Successfully removed search `{query_or_number}`.")
     else:
-        add_to_history("Conversation", member_name, "/search*remove")
+        add_to_history("Conversation", member_name, f"/search_remove {query_or_number}")
         add_to_history("Conversation", "System", f"`{query_or_number}` doesn not exist..")
         await ctx.send(f"`{query_or_number}` doesn not exist.")
 
-@bot.command(name="search*show")
+@bot.command(name="search_show")
 async def searchshow(ctx, *, query: str):
     member_name = ctx.author.display_name
     search_query = query
@@ -1613,7 +1588,7 @@ async def searchshow(ctx, *, query: str):
           timelimit='7d',
           max_results=2
         )
-        add_to_history("Conversation", member_name, f"/search {query}")
+        add_to_history("Conversation", member_name, f"/search_show {query}")
         add_to_history("Conversation", "Search", results)
         add_to_history("Conversation", "System", f"Successfully Searched for `{query}` and added it to bot's memory!")
         add_to_history("Conversation", "System", f"Search Results: FOR {query}")
@@ -1622,7 +1597,7 @@ async def searchshow(ctx, *, query: str):
     except Exception as e:
         await ctx.send(f"Sorry, it seems like you have reached the limit for the web search. Please try again later.")
         add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
-        add_to_history("Conversation", member_name, f"/search*show {query}")
+        add_to_history("Conversation", member_name, f"/search_show {query}")
 
 
 @bot.command(name="/help")
@@ -2028,5 +2003,88 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
         else:
             add_to_history("Conversation", "System", "Failed to generate the image after retries.")
             await interaction.followup.send("An error occurred while generating the image. Please try again later or select a different model.")
+
+if DEFAULT_MUSIC_MODEL == "facebook/musicgen-small":
+    def_music_model_name = "MusicGen Small"
+else:
+    def_music_model_name = DEFAULT_MUSIC_MODEL
+
+# Define the list of models as choices
+music_model_choices = [
+    app_commands.Choice(name="MusicGen Stereo Small", value="facebook/musicgen-stereo-small"),
+    app_commands.Choice(name=f"{def_music_model_name} (Default)", value=f"{DEFAULT_MUSIC_MODEL}")
+]
+
+# Define the music generation command
+@bot.tree.command(name="music", description="Generate music based on your prompt.")
+@app_commands.describe(prompt="The prompt for generating the music", model="Choose a model for generating the music (optional)")
+@app_commands.choices(model=music_model_choices)
+async def generate_music(interaction: discord.Interaction, prompt: str, model: str = "facebook/musicgen-small"):
+    if HUGGING_FACE_API == "YOUR_HUGGING_FACE_API_KEY":
+        await interaction.response.send_message("Sorry, You have entered an Invalid Hugging Face API Key!") 
+        return
+
+    await interaction.response.defer()  # Defer the response to allow for processing time
+    member_name = interaction.user.display_name
+
+    api_key = HUGGING_FACE_API
+    max_retries = 10
+    backoff_factor = 3
+
+    if model == "facebook/musicgen-small":
+        model_name = "MusicGen Small"  # Default model name
+    elif model == "facebook/musicgen-stereo-small":
+        model_name = "MusicGen Stereo Small"
+    else:
+        model_name = model
+
+    add_to_history("Conversation", member_name, f"/music {prompt} | Model: {model_name}")
+    print(f"Using model: {model_name}")
+    url = f'https://api-inference.huggingface.co/models/{model}'
+    headers = {'Authorization': f'Bearer {api_key}'}
+    data = {'inputs': prompt}
+
+    def save_audio(response):
+        audio_dir = "system/RAM/gen-music"
+        os.makedirs(audio_dir, exist_ok=True)
+        audio_path = os.path.join(audio_dir, "generated_music.wav")
+        with open(audio_path, 'wb') as f:
+            f.write(response.content)
+        logging.info(f"Audio generated and saved successfully as '{audio_path}'!")
+
+    def handle_error(response):
+        error_message = response.json().get('error', 'No error message')
+        if response.status_code == 503:
+            logging.error(f"Service unavailable. Error: {error_message}")
+        elif response.status_code == 429:
+            logging.error(f"Rate limit exceeded. Error: {error_message}")
+        else:
+            logging.error(f"Failed to generate/save audio. Status code: {response.status_code}, Error: {error_message}")
+
+    def fetch_audio_with_retries(url, headers, data):
+        for attempt in range(max_retries):
+            response = requests.post(url, headers=headers, json=data)
+            if response.ok:
+                save_audio(response)
+                return True
+            else:
+                handle_error(response)
+                if response.status_code in [503, 429]:
+                    wait_time = backoff_factor ** attempt
+                    logging.info(f"Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    break
+        logging.error("Exceeded maximum retries or encountered a non-retryable error.")
+        return False
+
+    success = fetch_audio_with_retries(url, headers, data)
+    if success:
+        audio_path = "system/RAM/gen-music/generated_music.wav"
+        file = discord.File(audio_path, filename="generated_music.wav")
+        await interaction.followup.send(file=file)
+        os.remove(audio_path)
+    else:
+        await interaction.followup.send("An error occurred while generating the music. Please try again later.")
 
 bot.run(TOKEN)
