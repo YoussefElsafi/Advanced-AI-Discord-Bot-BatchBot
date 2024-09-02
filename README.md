@@ -1,6 +1,7 @@
 # 🌌 BatchBot: The AI-Powered Discord Bot (Free & Open Source) 🚀
 
 [![Watch the Tutorial](https://img.shields.io/badge/Watch%20Tutorial-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
+[![Update Video (v1.5.0)](https://img.shields.io/badge/Update%20Video%20(v1.5.0)-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
 
 <div style="border-bottom: 2px solid #00ffff; margin-bottom: 20px;"></div>
 
@@ -116,9 +117,9 @@ custom_model_tokens = 1048576
 ### 🚀 Run the Bot
 
 Start the bot using the following command:
-
+```
 python main.py
-
+```
 ## Usage
 
 Interact with BatchBot using the following commands:
@@ -130,3 +131,28 @@ Interact with BatchBot using the following commands:
 - `no need for a command`: Summarizes a YouTube video and provides a transcript.
 - `no need for a command`: Analyzes a file and provides key insights.
 - `/music [prompt]`: Generates a music piece based on your text prompts.
+
+For a full list of commands, type `//help` in Discord after adding BatchBot to your server.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+
+## Acknowledgements
+
+- [Google Generative AI](https://aistudio.google.com/app) for providing the advanced AI models.
+- [Hugging Face](https://huggingface.co/) for the image generation models.
+- [DuckDuckGo](https://duckduckgo.com/) for the web search API.
+- And all the amazing contributors who have helped improve BatchBot!
+
+## Support
+
+If you have questions or need assistance, you can:
+
+- Reach out via email: [Support](mailto:batchbothelp@gmail.com)
+- Open an issue on our [GitHub repository](https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot/issues)
+- Watch our [YouTube tutorial](https://youtu.be/ow-Cw8OLTdI) for setup instructions
+- Watch our [Youtube Update Video (v1.5.0)](https://www.youtube.com/watch?v=CiG4pMOyPUo) for more information
+- Check our [Documentation](DOCUMENTATION.md) for detailed guides
+
+Enjoy using BatchBot! 🚀
