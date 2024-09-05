@@ -43,7 +43,6 @@ bot = commands.Bot(command_prefix="/", intents=intents)
 
 # File to store conversation history
 HISTORY_FILE = 'system/data/user_data.json'
-CHANNEL_HISTORY_FILE = 'system/data/channel_data.json'
 
 # Function to load conversation history from file
 def load_history():
