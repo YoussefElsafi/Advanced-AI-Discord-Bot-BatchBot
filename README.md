@@ -1,8 +1,5 @@
 # 🌌 BatchBot: The AI-Powered Discord Bot (Free & Open Source) 🚀
 
-[![Watch the Tutorial](https://img.shields.io/badge/Watch%20Tutorial-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
-[![Update Video (v1.5.0)](https://img.shields.io/badge/Update%20Video%20(v1.5.0)-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
-
 <div style="border-bottom: 2px solid #00ffff; margin-bottom: 20px;"></div>
 
 ## Introduction
@@ -10,6 +7,17 @@
 **BatchBot** is a cutting-edge Discord bot powered by advanced AI models, designed to bring a wide array of features to your server—completely free of charge. It combines neon-styled visuals with state-of-the-art AI functionalities to give your server a futuristic touch. Engage in natural conversations, analyze or generate images, summarize web searches, and explore various other capabilities with a high-tech vibe.
 
 <div style="border-bottom: 2px solid #00ffff; margin-bottom: 20px;"></div>
+
+## Videos
+
+> ### **Tutorial Video:**  
+> [![Watch the Tutorial](https://img.shields.io/badge/Watch%20Tutorial-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
+
+> ### **Update Video for v1.5.0:**  
+> [![Update Video (v1.5.0)](https://img.shields.io/badge/Update%20Video%20(v1.5.0)-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
+
+> ### **Update Video for v2.0.0:**  
+> Not available yet.
 
 ## 🌟 Features
 
@@ -21,11 +29,32 @@ Engage in dynamic conversations with BatchBot using Google Gemini AI models (Gem
 ### 🖼️ Image Processing
 Upload images, and BatchBot will use powerful vision models to generate detailed descriptions. It can identify objects, scenes, and emotions within the images.
 
+- **Identify Objects Example:**
+  - **Prompt:** detect the objects in this image
+  - ![bugatti_object_image object](https://github.com/user-attachments/assets/c88bb44f-266b-4a59-aad0-34d59f025502)
+
 ### 🎥 Video Processing
 Upload videos, and BatchBot will use powerful vision models to generate detailed descriptions. It can identify objects, scenes, and emotions within the video.
 
 ### 🎨 Image Generation
-Create stunning and personalized images using Hugging Face's Stable Diffusion. Generate anything from imaginative scenes to funny memes based on your text prompts.
+Create stunning and personalized images using Hugging Face's Stable Diffusion. Generate anything from imaginative scenes to funny memes based on your text prompts. BatchBot v2.0.0 now offers an expanded selection of image generation models, giving you more control and creative possibilities:
+
+- **Expanded Model Choices:** Choose from a variety of models, including:
+    - `stabilityai/stable-diffusion-xl-base-1.0` (Default)
+    - `stabilityai/stable-diffusion-3-medium-diffusers`
+    - `ehristoforu/dalle-3-xl-v2`
+    - `black-forest-labs/FLUX.1-schnell`
+    - `dataautogpt3/FLUX-anime2`
+    - **`Yntec/Chip_n_DallE (New)`:**  Chip & DallE, known for its unique style
+    - **`black-forest-labs/FLUX.1-dev (New)`:** Latest development version of Flux.1
+    - **`Shakker-Labs/FLUX.1-dev-LoRA-Garbage-Bag-Art (New)`:** Specializes in a "Garbage Bag Art" style
+    - **`Shakker-Labs/FLUX.1-dev-LoRA-playful-metropolis (New)`:** Creates images with a "Playful Metropolis" aesthetic
+    - **`Shakker-Labs/FLUX.1-dev-LoRA-add-details (New)`:**  Adds intricate details to images
+
+- **Image Example:**
+    - **Prompt:** Realistic bugatti sports car driving on a highway with Lamborghini sports cars driving on the road.
+    - **Model:** [Flux.1 DEV LoRA Add Details](https://huggingface.co/Shakker-Labs/FLUX.1-dev-LoRA-add-details) by [Shakker Labs](https://huggingface.co/Shakker-Labs)
+    - ![bugatti_generated_image](https://github.com/user-attachments/assets/b94c5eec-a543-46ac-8c9f-62488e66d677) 
 
 ### 🎶 Music Generation
 Unleash your inner composer with the `/music` command! BatchBot now leverages powerful AI models from Hugging Face to generate unique musical compositions based on your prompts. Choose your sound from:
@@ -33,16 +62,22 @@ Unleash your inner composer with the `/music` command! BatchBot now leverages po
   - `facebook/musicgen-stereo-small`
 
 ### 📺 YouTube Analysis
-Get summaries and transcripts from YouTube videos. BatchBot can analyze video URLs, extract content, and provide concise summaries.
+Get summaries and transcripts from YouTube videos. BatchBot can analyze video URLs, extract content, and provide concise summaries. 
+
+- **More Accurate YouTube Results in v2.0.0:** BatchBot now uses the DuckDuckGo Search API for YouTube searches, providing more precise and relevant video suggestions. 
 
 ### 📂 File Analysis
 Analyze and extract information from a variety of file types including PDFs, DOCX, Markdown, Python code, JavaScript, and more. BatchBot can also provide summaries and insights from these files.
+
+- **Advanced File Handling in v2.0.0:**  BatchBot's file handling has been significantly enhanced. It can now effectively analyze DOCX, XLSX, PPTX, and MCMETA files, expanding its ability to understand and interact with various document types. 
 
 ### 🌐 Web Search and Summarization
 Utilize DuckDuckGo's API for web searches. BatchBot provides summaries of the most relevant search results, making it easy to find the information you need.
 
 ### 🧠 Memory
-BatchBot can remember important information shared during conversations or stored via commands. This feature enables personalized interactions and a better understanding of your preferences. You can now use the `/memory_save` command to save important memories or information that you want BatchBot to retain.
+BatchBot can remember important information shared during conversations or stored via commands. This feature enables personalized interactions and a better understanding of your preferences. 
+
+- **New Dedicated Command in v2.0.0:** You can now use the `/memory_save` command to explicitly save messages or information that you want BatchBot to remember.
 
 ### 🔤 Custom User Names
 Set a custom name for yourself in interactions with BatchBot, enhancing personalization and user experience.
@@ -156,3 +191,14 @@ If you have questions or need assistance, you can:
 - Check our [Documentation](DOCUMENTATION.md) for detailed guides
 
 Enjoy using BatchBot! 🚀
+
+___
+
+**Update Info:**
+
+- **Latest Version:** v2.0.0
+- **Release Date:** 9/11/2024 | September 11, 2024
+- **Published By:** Youssef Elsafi
+```
+
+This updated README.md integrates the v2.0.0 changes directly within the Features section, making it easier for users to see what's new without having to read a separate update section. 
