@@ -199,6 +199,3 @@ ___
 - **Latest Version:** v2.0.0
 - **Release Date:** 9/11/2024 | September 11, 2024
 - **Published By:** Youssef Elsafi
-```
-
-This updated README.md integrates the v2.0.0 changes directly within the Features section, making it easier for users to see what's new without having to read a separate update section. 
