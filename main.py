@@ -10,28 +10,24 @@ import asyncio
 import logging
 import random
 import time
-from system.config import TOKEN, NAME, API_KEY, sys_security, gen_config, gen_config2, ai_toggle, pro, HUGGING_FACE_API, Image_Model, DEFAULT_MUSIC_MODEL, history_limit, limit_history, show_time, custom_model, custom_model_name, custom_model_tokens
+from system.config import TOKEN, NAME, API_KEY, sys_security, gen_config, gen_config2, ai_toggle, pro, HUGGING_FACE_API, Image_Model, DEFAULT_MUSIC_MODEL, history_limit, limit_history, show_time, custom_model, custom_model_name, custom_model_tokens, history_channel_toggle, embed_colors, Object_Detection_Model, show_tokens_at_startup
 from duckduckgo_search import DDGS
 import httpx
-from system.instruction import ins, video_ins, file_ins
-from system.instructionV import insV, insV2
+from system.instruction import ins, video_ins, file_ins, insV, insV2
 from discord.utils import get
 import io
-import fitz
-from docx import Document  # For DOCX files
-import markdown  # For Markdown files
-import mimetypes  # To guess MIME types
-import openpyxl  # For Excel files
-from pptx import Presentation  # For PowerPoint files
-import csv  # For CSV files
 from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import TextFormatter
 from youtube_transcript_api import TranscriptsDisabled
 import urllib.parse as urlparse
 import re
 from urllib.parse import urlparse, parse_qs
-import textwrap
-import base64
+import inspect
+import docx
+import pptx
+import openpyxl
+import datetime
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 # Set up the bot with the correct prefix and intents
 intents = discord.Intents.default()
@@ -40,6 +36,11 @@ intents.presences = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="/", intents=intents)
+
+if not os.path.exists('system/data'):
+    os.makedirs('system/data') 
+if not os.path.exists('system/RAM'):
+    os.makedirs('system/RAM') 
 
 # File to store conversation history
 HISTORY_FILE = 'system/data/user_data.json'
@@ -61,29 +62,77 @@ def save_history():
     with open(HISTORY_FILE, 'w') as file:
         json.dump(conversation_history, file, indent=4)
 
-# Function to add a message to the conversation history for a user
-def add_to_history(user_id, member_name, message):
+# Function to add a message to the conversation history
+def add_to_history(member_name, message, channel_name=None):
+    """Adds a message to the conversation history."""
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+
+    # Get context object ('message', 'ctx.message', etc.) from calling function
+    frame = inspect.currentframe().f_back
+    args, _, _, values = inspect.getargvalues(frame)
+    context_obj = values.get('message', None)
+    if context_obj is None:
+        context_obj = values.get('ctx', None)
+        if context_obj is not None:
+            context_obj = context_obj.message
+
+    # Use provided channel_name or get it from context
+    if channel_name is None:  
+        if history_channel_toggle and context_obj is not None:
+            user_id = context_obj.channel.name
+        else:
+            user_id = "Conversation"
+    else:
+        user_id = channel_name  # Use the provided channel_name
+
     if user_id not in conversation_history:
         conversation_history[user_id] = []
+
     if show_time:
         conversation_history[user_id].append(f"{timestamp} - {member_name}: {message}")
     else:
         conversation_history[user_id].append(f"{member_name}: {message}")
+
     # Truncate history if limit_history is True 
     if limit_history and len(conversation_history[user_id]) > history_limit:
         conversation_history[user_id] = conversation_history[user_id][-history_limit:]
+
     save_history() 
 
-# Function to add a message to the conversation history for the bot
-def add_to_history_bot(user_id, member_name, message):
+def add_to_history_bot(member_name, message, channel_name=None):
+    """Adds a bot message to the conversation history."""
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+
+    # Get context object ('message', 'ctx.message', etc.) from calling function
+    frame = inspect.currentframe().f_back
+    args, _, _, values = inspect.getargvalues(frame)
+    context_obj = values.get('message', None)
+    if context_obj is None:
+        context_obj = values.get('ctx', None)
+        if context_obj is not None:
+            context_obj = context_obj.message
+
+    # Use provided channel_name or get it from context
+    if channel_name is None:  
+        if history_channel_toggle and context_obj is not None:
+            user_id = context_obj.channel.name
+        else:
+            user_id = "Conversation"
+    else:
+        user_id = channel_name  # Use the provided channel_name
+
     if user_id not in conversation_history:
         conversation_history[user_id] = []
-    conversation_history[user_id].append(f"{timestamp} - {member_name}: {message}")
-    save_history()
 
-add_to_history("Conversation", "System", "You have been rebooted!")
+    if show_time:
+        conversation_history[user_id].append(f"{timestamp} - {member_name}{message}")
+    else:
+        conversation_history[user_id].append(f"{member_name}{message}")
+    save_history()
+if history_channel_toggle:
+    pass
+else:
+    add_to_history("System", "You have been rebooted!")
 
 # Utility functions
 def save_search(query, result):
@@ -141,20 +190,37 @@ def load_memory(query=None):
     except FileNotFoundError:
         return {}
 
+def get_conversation_history(ctx=None): 
+    """Gets the conversation history based on history_channel_toggle."""
+    if history_channel_toggle and ctx is not None:
+        user_id = ctx.channel.name
+    else:
+        user_id = "Conversation"
+    return "\n".join(conversation_history.get(user_id, []))
+
 api_key = f"{API_KEY}"
 name = f"{NAME}"
-print(" ")
-if api_key == "YOUR_GEMINI_API_KEY":
-    print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}API KEY:{Style.RESET_ALL} {Fore.RED + Style.BRIGHT}INVALID GEMINI API KEY!{Style.RESET_ALL}")
+if show_tokens_at_startup:
+    print(" ")
+    if api_key == "YOUR_GEMINI_API_KEY":
+        print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}API KEY:{Style.RESET_ALL} {Fore.RED + Style.BRIGHT}INVALID GEMINI API KEY!{Style.RESET_ALL}")
+    else:
+        print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}API KEY:{Style.RESET_ALL} {Fore.MAGENTA + Style.BRIGHT}{api_key}{Style.RESET_ALL}")
+    print(Fore.RED + Style.BRIGHT + "__________________________________________________________________________________")
+    print(" ")
+    if TOKEN == "YOUR_DISCORD_BOT_TOKEN":
+        print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}BOT KEY:{Style.RESET_ALL} {Fore.RED + Style.BRIGHT}INVALID DISCORD TOKEN BOT!{Style.RESET_ALL}")
+    else:
+        print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}BOT KEY:{Style.RESET_ALL} {Fore.BLUE + Style.BRIGHT}{TOKEN}{Style.RESET_ALL}")
+    print(Fore.RED + Style.BRIGHT + "__________________________________________________________________________________")
+    print(" ")
+    if HUGGING_FACE_API == "YOUR_HUGGING_FACE_API_KEY":
+        print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}HUGGING FACE API KEY:{Style.RESET_ALL} {Fore.RED + Style.BRIGHT}INVALID HUGGING FACE API KEY!{Style.RESET_ALL}")
+    else:
+        print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}HUGGING FACE API KEY:{Style.RESET_ALL} {Fore.YELLOW + Style.BRIGHT}{HUGGING_FACE_API}{Style.RESET_ALL}")
+    print(" ")
 else:
-    print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}API KEY:{Style.RESET_ALL} {Fore.MAGENTA + Style.BRIGHT}{api_key}{Style.RESET_ALL}")
-print(Fore.RED + Style.BRIGHT + "__________________________________________________________________________________")
-print(" ")
-if TOKEN == "YOUR_DISCORD_BOT_TOKEN":
-    print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}BOT KEY:{Style.RESET_ALL} {Fore.RED + Style.BRIGHT}INVALID DISCORD TOKEN BOT!{Style.RESET_ALL}")
-else:
-    print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}BOT KEY:{Style.RESET_ALL} {Fore.BLUE + Style.BRIGHT}{TOKEN}{Style.RESET_ALL}")
-print(" ")
+    pass
 
 # Global variable to store the member's custom name
 member_custom_name = {}
@@ -162,8 +228,12 @@ member_custom_name = {}
 @bot.command(name='name')
 async def change_name(ctx, *, new_name: str):
     global member_custom_name
-    member_custom_name[ctx.author.id] = new_name
-    await ctx.send(f"Your name has been changed to {new_name}.")
+    if not new_name:  # Check for empty string
+        await ctx.send("Please provide a name.")
+    else:
+        member_custom_name[ctx.author.id] = new_name
+        await ctx.send(f"Your name has been changed to {new_name}.")
+
 if custom_model:
     print(f"{Fore.WHITE + Style.BRIGHT + Style.DIM}CUSTOM MODEL:{Style.RESET_ALL} {Fore.GREEN + Style.BRIGHT}{custom_model_name}{Style.RESET_ALL}")
     print(f"Max Output Tokens: {custom_model_tokens}")
@@ -257,6 +327,48 @@ model_name = genai.GenerativeModel(
   safety_settings=sys_security
 )
 
+model_vid = genai.GenerativeModel(
+    model_name="gemini-1.5-pro-latest",
+    generation_config=gen_config,
+    system_instruction=(video_ins),
+)
+
+model_vid_a = genai.GenerativeModel(
+    model_name="gemini-1.5-pro-exp-0827",
+    generation_config=gen_config,
+    system_instruction=(video_ins),
+)
+
+model_vid_flash = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=gen_config,
+    system_instruction=(video_ins),
+)
+
+model_file = genai.GenerativeModel(
+    model_name="gemini-1.5-pro-latest",
+    generation_config=gen_config,
+    system_instruction=(file_ins),
+)
+
+model_file_a = genai.GenerativeModel(
+    model_name="gemini-1.5-pro-exp-0827",
+    generation_config=gen_config,
+    system_instruction=(file_ins),
+)
+
+model_file_flash = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=gen_config,
+    system_instruction=(file_ins),
+)
+
+model_object = genai.GenerativeModel(
+    model_name="gemini-1.5-flash-latest",
+    generation_config=gen_config,
+    system_instruction="Your only propose is to get the details that the user sent to you and you convert them into human talk only and nothing else, example: 'User: [{'score': 0.9994643330574036, 'label': 'sports ball', 'box': {'xmin': 95, 'ymin': 444, 'xmax': 172, 'ymax': 515}}, {'score': 0.810539960861206, 'label': 'person', 'box': {'xmin': 113, 'ymin': 15, 'xmax': 471, 'ymax': 414}}, {'score': 0.7840690612792969, 'label': 'person', 'box': {'xmin': 537, 'ymin': 35, 'xmax': 643, 'ymax': 241}}, {'score': 0.9249405860900879, 'label': 'person', 'box': {'xmin': 109, 'ymin': 14, 'xmax': 497, 'ymax': 528}}, {'score': 0.9990099668502808, 'label': 'person', 'box': {'xmin': 0, 'ymin': 47, 'xmax': 160, 'ymax': 373}}, {'score': 0.8631113767623901, 'label': 'person', 'box': {'xmin': 110, 'ymin': 13, 'xmax': 558, 'ymax': 528}}, {'score': 0.9433853626251221, 'label': 'person', 'box': {'xmin': 537, 'ymin': 34, 'xmax': 643, 'ymax': 310}}, {'score': 0.6196897625923157, 'label': 'person', 'box': {'xmin': 715, 'ymin': 160, 'xmax': 770, 'ymax': 231}}, {'score': 0.5696023106575012, 'label': 'person', 'box': {'xmin': 777, 'ymin': 170, 'xmax': 800, 'ymax': 221}}, {'score': 0.9989137649536133, 'label': 'person', 'box': {'xmin': 423, 'ymin': 67, 'xmax': 638, 'ymax': 493}}] | You: '- There's a sports ball near the bottom middle.\n- There are a few people in the image.\n- One person is on the left side.\n- A couple of people are in the center and middle-right.\n- There are a couple of possible people on the right, but the AI isn't as sure about them. \n' and you **MUST** use - at the start like in the example and only say the stuff that the user sent you and not anything else",
+)
+
 # Load existing conversation history from file
 try:
     with open(HISTORY_FILE, 'r') as file:
@@ -280,6 +392,13 @@ async def on_ready():
         print(f"Error: {e}")
 
 
+# Start Gemini Chats //:
+chat_session = model.start_chat(history=[])
+chat_session_pro_latest = model_pro_latest.start_chat(history=[])
+chat_session_pro_advanced = model_pro_advanced.start_chat(history=[])
+chat_session_flash = model_flash.start_chat(history=[])
+
+
 @bot.command(name='report')
 async def report_bug(ctx, *, report: str):
     # Prepare the report entry
@@ -294,7 +413,7 @@ async def report_bug(ctx, *, report: str):
     with open(report_file_path, "a") as file:
         file.write(report_entry)
 
-    add_to_history("Conversation", member_name, f"System: {member_name} sent a report! `{report}`")
+    add_to_history(member_name, f"System: {member_name} sent a report! `{report}`")
     await ctx.send(f"Thank you for your report, {member_name}. `{report}` It has been logged.")
 
 if not os.path.exists('system/RAM/read-img'):
@@ -314,7 +433,7 @@ async def feedback(ctx, *, feedback: str):
     with open(report_file_path, "a") as file:
         file.write(feedback_entry)
 
-    add_to_history("Conversation", member_name, f"System: {member_name} sent a feedback! `{feedback}`")
+    add_to_history(member_name, f"System: {member_name} sent a feedback! `{feedback}`")
     await ctx.send(f"Thank you for your feedback, {member_name}. `{feedback}` has been logged!")
 
 
@@ -326,8 +445,8 @@ async def memory_save(ctx, *, message: str):
     timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
     response_name = model_name.generate_content(f"SYSTEM: {message}")
     save_memory(f"{timestamp} - {response_name.text}: ", message)
-    add_to_history("Conversation", member_name, f"/memory_save {message}")
-    add_to_history("Conversation", "System", f"Saved '{message}' to core memory!")
+    add_to_history(member_name, f"/memory_save {message}")
+    add_to_history("System", f"Saved '{message}' to core memory!")
     await ctx.send(f"Saved '{message}' to core memory!")
 
 
@@ -376,13 +495,13 @@ async def handle_youtube_url(url, channel, prompt=None):
         transcript = get_transcript_from_video_id(video_id)
         if "Error" in transcript:
             await channel.send(transcript)
-            add_to_history("Conversation", "System", f"Error retrieving transcript: {transcript}")
+            add_to_history("System", f"Error retrieving transcript: {transcript}")
         else:
-            add_to_history("Conversation", "System", f"Analyzed the YouTube URL and retrieved transcript: {transcript}")
+            add_to_history("System", f"Analyzed the YouTube URL and retrieved transcript: {transcript}")
             await channel.send("Analyzed the YouTube URL.")
     except Exception as e:
         await channel.send(f"An error occurred: {str(e)}")
-        add_to_history("Conversation", "System", f"Error occurred: {str(e)}")
+        add_to_history("System", f"Error occurred: {str(e)}")
 
 async def send_message(channel, message):
     """
@@ -409,13 +528,13 @@ async def delete_message(message):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send(f"{error}")
-        add_to_history("Conversation", "System", error)
+        add_to_history("System", error)
     else:
         print(error)
         await ctx.send(f"An error occurred: {error}")
         raise error
 
-async def handle_image_attachment(attachment, channel, prompt=None):
+async def handle_image_attachment(attachment, channel, prompt=None, message=None):
     """Handles the image attachment processing and deletion."""
     file_extension = attachment.filename.split('.')[-1].lower()
     if file_extension == 'jpg':
@@ -439,8 +558,8 @@ async def handle_image_attachment(attachment, channel, prompt=None):
             # Generate content based on the image directly
 
             # Add to conversation history
-            add_to_history("Conversation", "System", "Image received and processed")
-            history = "\n".join(conversation_history["Conversation"])
+            add_to_history("System", "Image received and processed")
+            history = get_conversation_history(message) # Use the function to get history
             # Assuming img is a PIL Image object
             buffered = io.BytesIO()
             img.save(buffered, format="PNG")  # or "JPEG" if applicable
@@ -464,7 +583,7 @@ async def handle_image_attachment(attachment, channel, prompt=None):
             # Generate a response based on the combined input
             response = model.generate_content(combined_input)
             response_text = response.text.strip()
-            add_to_history_bot("Conversation", "", response_text)
+            add_to_history_bot("", response_text)
             if response_text.startswith("/img"):
                 # Extract the text after "/img"
                 text_after_command = response_text[len("/img"):].strip() # //img
@@ -472,18 +591,18 @@ async def handle_image_attachment(attachment, channel, prompt=None):
                 if text_after_command:
                     # Generate the text after "/img"
                     prompt_response_text = text_after_command
-                    add_to_history_bot("Conversation", "", f"/img {prompt_response_text}")
+                    add_to_history_bot("", f"/img {prompt_response_text}")
                 else:
-                    history = "\n".join(conversation_history["Conversation"])
+                    history = get_conversation_history(message) # Use the function to get history
                     full_prompt = f"{history}\nVisualizer: What image do you want to generate?: "
                     response = model.generate_content(full_prompt)
                     prompt_response_text = response.text.strip()
-                    add_to_history_bot("Conversation", "", f"/img {prompt_response_text}")
+                    add_to_history_bot("", f"/img {prompt_response_text}")
                 await reading_message.delete()
                 generating = await channel.send("Generating image...")
-                add_to_history("Conversation", "System", f"Generating image: {prompt_response_text}")
+                add_to_history("System", f"Generating image: {prompt_response_text}")
                 if HUGGING_FACE_API == "HUGGING_FACE_API_KEY":
-                    add_to_history("Conversation", "Error", "Failed to generate image! Invalid API Key.")
+                    add_to_history("Error", "Failed to generate image! Invalid API Key.")
                     await channel.send("Failed to generate image! Invalid API Key.")
                     print("Failed to generate image! Invalid API Key, Please enter a valid hugging face API Key into system/config.py!")
                 else:
@@ -543,29 +662,78 @@ async def handle_image_attachment(attachment, channel, prompt=None):
                             await generating.delete()
                             embed = discord.Embed(title="Generated Image!",
                                                 description=f"{prompt_response_text}",
-                                                color=0x00ff00)
+                                                color=embed_colors)
                             embed.set_image(url="attachment://generated_image.png")
                             embed.set_footer(text=f"Generated by {NAME}")
                             await channel.send(file=discord.File(image_path), embed=embed)
-                            add_to_history("Conversation", "Generated Image Details", response_text)
+                            add_to_history("Generated Image Details", response_text)
                             await send_message(channel, response_text)
 
                             os.remove(image_path)
                         except Exception as e:
+
                             await channel.send("Error processing the image, Please try again later.")
-                            add_to_history("Conversation", "System", f"Error processing the image: {str(e)}")
+                            add_to_history("System", f"Error processing the image: {str(e)}")
                             print(f"Error processing image: {e}")
-                            history = "\n".join(conversation_history["Conversation"])
+                            history = get_conversation_history(message) # Use the function to get history
                             full_prompt = f"{history}\nError processing the image: {str(e)}"
                             response = model.generate_content(full_prompt)  # Using the original language model
                             response_text = response.text.strip()
-                            add_to_history_bot("Conversation", "", response_text)
+                            add_to_history_bot("", response_text)
                             await channel.send(response_text)
 
                     else:
                         print('Error:', response.status_code, response.text)
-                        add_to_history("Conversation", "Error", f"Failed to generate image: {response.status_code} | {response.text}")
+                        add_to_history("Error", f"Failed to generate image: {response.status_code} | {response.text}")
                         await channel.send("An error occurred while generating the image.")
+
+            elif response_text.startswith("/object"):
+                # Object Detection (Using Hugging Face DETR)
+                await reading_message.delete()
+                ano = await channel.send("Detecting objects in the image...")
+                API_URL = f"https://api-inference.huggingface.co/models/{Object_Detection_Model}"
+                headers = {"Authorization": f"Bearer {HUGGING_FACE_API}"}
+                response = requests.post(API_URL, headers=headers, data=image_part['data'])
+                try:
+                    response.raise_for_status()
+                    output = response.json()
+                    print("Results:", output)
+                    add_to_history("Object Detection Results", f"{output}")
+                    # Create the 'system/RAM/annotate-img' directory if it doesn't exist
+                    os.makedirs('system/RAM/object-img', exist_ok=True)
+                    annotated_image_path = os.path.join('system/RAM/object-img', f"{os.path.basename(attachment.filename)}.object.jpg") 
+                    # Create a figure and axes
+                    fig, ax = plt.subplots(1)
+                    ax.imshow(img)
+                    # Draw bounding boxes
+                    for prediction in output:
+                        bbox = prediction['box']
+                        score = prediction['score']
+                        label = prediction['label']
+                        rect = patches.Rectangle((bbox['xmin'], bbox['ymin']), 
+                                                 bbox['xmax'] - bbox['xmin'], 
+                                                 bbox['ymax'] - bbox['ymin'], 
+                                                 linewidth=1, edgecolor='C'+str(len(output)), facecolor='none')
+                        ax.add_patch(rect)
+                        ax.text(bbox['xmin'], bbox['ymin']-10, label, color='C'+str(len(output)), fontsize=8)
+                    plt.savefig(annotated_image_path)
+                    plt.close()
+                    response_obj_details = model_object.generate_content(f"{output}")  # Using the original language model
+                    response_text_obj = response_obj_details.text.strip()
+                    await ano.delete()
+                    # Send the annotated image as a Discord Embed
+                    embed = discord.Embed(title="Objects in the Image!",
+                        description=f"{response_text_obj}",
+                        color=embed_colors)
+                    embed.set_image(url=f"attachment://{os.path.basename(annotated_image_path)}")
+                    file = discord.File(annotated_image_path)
+                    await channel.send(file=file, embed=embed)
+                    # Clean up the annotated image file
+                    os.remove(annotated_image_path)
+                except requests.exceptions.HTTPError as err:
+                    await ano.delete()
+                    print(f"Error: {err}")
+                    await channel.send(f"An error occurred while detecting objects the image: {err}")
             else:
                 await channel.send(response_text)
                 await reading_message.delete()
@@ -573,24 +741,25 @@ async def handle_image_attachment(attachment, channel, prompt=None):
             try:
                 response2 = model_pro.generate_content(img)
                 response_text2 = response2.text.strip()
-                add_to_history("Conversation", "Additional Image details", response_text2)
+                add_to_history("Additional Image details", response_text2)
                 print("Used model Pro")
                 print(" ")
             except Exception as e3:
                 try:
                     response2 = model_V.generate_content(img)
                     response_text2 = response2.text.strip()
-                    add_to_history("Conversation", "Additional Image details", response_text2)
+                    add_to_history("Additional Image details", response_text2)
                     print("Used Model Pro Advanced")
                     print(" ")
                 except Exception as e2:
                     try:
                         response2 = model_V2.generate_content(img)
                         response_text2 = response2.text.strip()
-                        add_to_history("Conversation", "Additional Image details", response_text2)
+                        add_to_history("Additional Image details", response_text2)
                         print("Used Model Flash")
                         print(" ")
                     except Exception as e:
+
                         print(f"Failed to run Model Flash, Please try again Later | ERROR: {e}")
                         print(" ")
                     print(f"Failed running Model Pro Advanced, Running Model Flash | ERROR: {e2}")
@@ -599,15 +768,16 @@ async def handle_image_attachment(attachment, channel, prompt=None):
                 print(" ")
 
         except Exception as e:
+
             await reading_message.delete()
             await channel.send("Error processing the image, Please try again later.")
-            add_to_history("Conversation", "System", f"Error processing the image: {str(e)}")
+            add_to_history("System", f"Error processing the image: {str(e)}")
             print(f"Error processing image: {e}")
-            history = "\n".join(conversation_history["Conversation"])
+            history = get_conversation_history(message) # Use the function to get history
             full_prompt = f"{history}\nError processing the image: {str(e)}"
             response = model.generate_content(full_prompt)
             response_text = response.text.strip()
-            add_to_history_bot("Conversation", "", response_text)
+            add_to_history_bot("", response_text)
             await channel.send(response_text)
 
         finally:
@@ -642,53 +812,7 @@ def wait_for_files_active(files):
     print("...all files ready")
     print()
 
-# Model Configuration
-generation_config = {
-    "temperature": 1,
-    "top_p": 0.95,
-    "top_k": 64,
-    "max_output_tokens": 8192,
-    "response_mime_type": "text/plain",
-}
-
-model_vid = genai.GenerativeModel(
-    model_name="gemini-1.5-pro-latest",
-    generation_config=generation_config,
-    system_instruction=(video_ins),
-)
-
-model_vid_a = genai.GenerativeModel(
-    model_name="gemini-1.5-pro-exp-0827",
-    generation_config=generation_config,
-    system_instruction=(video_ins),
-)
-
-model_vid_flash = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    generation_config=generation_config,
-    system_instruction=(video_ins),
-)
-
-model_file = genai.GenerativeModel(
-    model_name="gemini-1.5-pro-latest",
-    generation_config=generation_config,
-    system_instruction=(file_ins),
-)
-
-model_file_a = genai.GenerativeModel(
-    model_name="gemini-1.5-pro-exp-0827",
-    generation_config=generation_config,
-    system_instruction=(file_ins),
-)
-
-model_file_flash = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
-    generation_config=generation_config,
-    system_instruction=(file_ins),
-)
-
-
-async def handle_media_attachment(attachment, channel, prompt=None):
+async def handle_media_attachment(attachment, channel, prompt=None, message=None):
     """Handles the video and audio attachment processing and deletion."""
     file_extension = attachment.filename.split('.')[-1].lower()
     supported_video_formats = ('mp4', 'avi', 'mkv', 'mov')
@@ -720,7 +844,7 @@ async def handle_media_attachment(attachment, channel, prompt=None):
             wait_for_files_active([gemini_file])
 
             # Prepare the text input (just the history)
-            text_input = "\n".join(conversation_history["Conversation"])
+            text_input = get_conversation_history(message) # Use the function to get history
 
             # Create the prompt with the history
             user_prompt = { 
@@ -730,32 +854,30 @@ async def handle_media_attachment(attachment, channel, prompt=None):
 
             # Generate response with model_pro (assuming it's suitable for both video and audio)
             try:
-                chat_session = model_pro_latest.start_chat(history=[])
-                response = chat_session.send_message(user_prompt)
+                response = chat_session_pro_latest.send_message(user_prompt)
                 response_text = response.text.strip()
-                add_to_history_bot("Conversation", "", response_text)
+                add_to_history_bot("", response_text)
                 await analyze.delete()
                 await channel.send(response_text)
                 print("Used model Pro")
             except Exception as e3:
                 try:
-                    chat_session = model_pro_advanced.start_chat(history=[])
-                    response = chat_session.send_message(user_prompt)
+                    response = chat_session_pro_advanced.send_message(user_prompt)
                     response_text = response.text.strip()
-                    add_to_history_bot("Conversation", "", response_text)
+                    add_to_history_bot("", response_text)
                     await analyze.delete()
                     await channel.send(response_text)
                     print("Used Model Pro Advanced")
                 except Exception as e2:
                     try:
-                        chat_session = model_flash.start_chat(history=[])
-                        response = chat_session.send_message(user_prompt)
+                        response = chat_session_flash.send_message(user_prompt)
                         response_text = response.text.strip()
-                        add_to_history_bot("Conversation", "", response_text)
+                        add_to_history_bot("", response_text)
                         await analyze.delete()
                         await channel.send(response_text)
                         print("Used Model Flash")
                     except Exception as e:
+
                         print(f"Failed to run Model Flash, Please try again Later | ERROR: {e}")
                     print(f"Failed running Model Pro Advanced, Running Model Flash | ERROR: {e2}")
                 print(f"Failed running Model Pro, Running Model Pro Advanced | ERROR: {e3}")
@@ -763,28 +885,30 @@ async def handle_media_attachment(attachment, channel, prompt=None):
             try:
                 response2 = model_vid.generate_content(gemini_file)
                 response_text2 = response2.text.strip()
-                add_to_history("Conversation", "Additional Media details", response_text2)
+                add_to_history("Additional Media details", response_text2)
                 print("Used model Pro")
             except Exception as e3:
                 try:
                     response2 = model_vid_a.generate_content(gemini_file)
                     response_text2 = response2.text.strip()
-                    add_to_history("Conversation", "Additional Media details", response_text2)
+                    add_to_history("Additional Media details", response_text2)
                     print("Used Model Pro Advanced")
                 except Exception as e2:
                     try:
                         response2 = model_vid_flash.generate_content(gemini_file)
                         response_text2 = response2.text.strip()
-                        add_to_history("Conversation", "Additional Media details", response_text2)
+                        add_to_history("Additional Media details", response_text2)
                         print("Used Model Flash")
                     except Exception as e:
+
                         print(f"Failed to run Model Flash, Please try again Later | ERROR: {e}")
                     print(f"Failed running Model Pro Advanced, Running Model Flash | ERROR: {e2}")
                 print(f"Failed running Model Pro, Running Model Pro Advanced | ERROR: {e3}")
 
         except Exception as e:
+
             await channel.send("Error processing the media, please try again later.")
-            add_to_history("Conversation", "System", f"Error processing the media: {str(e)}")
+            add_to_history("System", f"Error processing the media: {str(e)}")
             print(f"Error processing media: {e}")
 
         finally:
@@ -797,10 +921,15 @@ async def handle_media_attachment(attachment, channel, prompt=None):
         await channel.send(f"Error reading the attachment: {str(e)}")
         print(f"Error reading attachment: {e}")
 
-async def handle_files_attachment(attachment, channel, prompt=None):
+async def handle_files_attachment(attachment, channel, prompt=None, message=None):
     """Handles various text-based file attachments and processes them."""
 
     file_extension = attachment.filename.split('.')[-1].lower()
+    supported_file_formats = ('pdf', 'docx', 'md', 'py', 'js', 'bat', 'xlsx', 'pptx', 'csv', 'txt', 'json', 'log', 'html', 'css', 'mcmeta')
+
+    if file_extension not in supported_file_formats:
+        await channel.send("Unsupported file format. Please upload a supported file.")
+        return
     directory = 'system/RAM/read-files'
     file_path = os.path.join(directory, attachment.filename)
 
@@ -818,76 +947,177 @@ async def handle_files_attachment(attachment, channel, prompt=None):
 
         reading_message = await channel.send(f"Analyzing the file: {attachment.filename}...")
 
-        # Upload the file to Google Generative AI
+        # Verify that the file was saved correctly
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"File {file_path} was not saved properly.")
+
+        # Get file details
+        file_size = os.path.getsize(file_path)
+        creation_time = os.path.getctime(file_path)
+        modification_time = os.path.getmtime(file_path)
+
+        file_details = (
+            f"File: {attachment.filename}\n"
+            f"Size: {file_size} bytes\n"
+            f"Created: {datetime.datetime.fromtimestamp(creation_time)}\n"
+            f"Modified: {datetime.datetime.fromtimestamp(modification_time)}\n"
+        )
+        add_to_history("File Details", file_details)
+
+        # Upload the file to Google Generative AI after saving it locally
         file = genai.upload_file(path=file_path, display_name=attachment.filename)
 
+        # Extract text content based on the file type
+        text_content = ""
+
+        if file_extension == 'docx':
+            # Extract text from DOCX files
+            try:
+                doc = docx.Document(file_path)
+                for paragraph in doc.paragraphs:
+                    text_content += paragraph.text + "\n"
+            except Exception as e:
+
+                print(f"Error extracting text from .docx using docx module: {e}")
+                await channel.send(f"Error processing .docx file: Could not extract text.")
+                return
+
+        elif file_extension == 'xlsx':
+            # Extract text from XLSX or XLS files
+            try:
+                workbook = openpyxl.load_workbook(file_path)
+                for sheet in workbook.sheetnames:
+                    sheet_data = workbook[sheet]
+                    for row in sheet_data.iter_rows(values_only=True):
+                        text_content += ' '.join([str(cell) for cell in row]) + "\n"
+            except Exception as e:
+
+                print(f"Error extracting text from .xlsx: {e}")
+                await channel.send(f"Error processing .xlsx file: Could not extract text.")
+                return
+
+        elif file_extension == 'pptx':
+            # Extract text from PPTX or PPT files
+            try:
+                presentation = pptx.Presentation(file_path)
+                for slide in presentation.slides:
+                    for shape in slide.shapes:
+                        if hasattr(shape, "text"):
+                            text_content += shape.text + "\n"
+            except Exception as e:
+
+                print(f"Error extracting text from .pptx or .ppt: {e}")
+                await channel.send(f"Error processing .pptx or .ppt file: Could not extract text.")
+                return
+
+        elif file_extension == 'mcmeta':
+            # Read MCMETA files (usually small JSON-like files)
+            try:
+                with open(file_path, 'r') as mcmeta_file:
+                    text_content = mcmeta_file.read()
+            except Exception as e:
+
+                print(f"Error reading .mcmeta file: {e}")
+                await channel.send(f"Error processing .mcmeta file: Could not read content.")
+                return
+
+        add_to_history("System", f"{attachment.filename} received and processed")
+
         # Choose a Gemini model for processing
-        model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest")
+        model_f_p = genai.GenerativeModel(model_name="gemini-1.5-pro-latest")
 
         # Generate a response based on the file content and the prompt
         history = "\n".join(conversation_history["Conversation"])
-        full_prompt = f"{history}\n{attachment.filename}: {prompt or 'Please analyze this file.'}"
+        full_prompt = f"{history}\n{attachment.filename}: {prompt or ''}"
 
         try:
-            response = model.generate_content([file, full_prompt])
+            if file_extension in ['docx', 'xlsx', 'xls', 'pptx', 'ppt', 'mcmeta']:
+                response = model_f_p.generate_content([f"{attachment.filename} DETAILS: '{text_content}' | ", full_prompt])
+            else:
+                response = model_f_p.generate_content([file, full_prompt])
             response_text = response.text.strip()
-            print("Used Gemini-1.5-Pro-latest")
+            print("Used Gemini 1.5 Pro latest")
+
         except Exception as e3:
-            print(f"Failed running Gemini-1.5-Flash, trying Model Pro Advanced | ERROR: {e3}")
+            print(f"Failed running Gemini 1.5 Pro latest, trying Model Pro Advanced | ERROR: {e3}")
             try:
-                response = model_pro_advanced.generate_content([file, full_prompt])
+                # Fallback to Model Pro Advanced for main response
+                if file_extension in ['docx', 'xlsx', 'xls', 'pptx', 'ppt', 'mcmeta']:
+                    response = model_pro_advanced.generate_content([f"{attachment.filename} DETAILS: '{text_content}' | ", full_prompt])
+                else:
+                    response = model_pro_advanced.generate_content([file, full_prompt])
                 response_text = response.text.strip()
                 print("Used Model Pro Advanced")
+
             except Exception as e2:
                 print(f"Failed running Model Pro Advanced, trying Model Flash | ERROR: {e2}")
                 try:
-                    chat_session = model.start_chat(history=[])
-                    response = chat_session.send_message(full_prompt)
+                    # Fallback to Model Flash for main response
+                    if file_extension in ['docx', 'xlsx', 'xls', 'pptx', 'ppt', 'mcmeta']:
+                        response = model_file_flash.generate_content([f"{attachment.filename} DETAILS: '{text_content}' | ", full_prompt])
+                    else:
+                        response = model_file_flash.generate_content([file, full_prompt])
                     response_text = response.text.strip()
                     print("Used Model Flash")
+
                 except Exception as e:
+
                     print(f"Failed to run all Models, Please try again Later | ERROR: {e}")
                     response_text = "Sorry, I'm having trouble processing your request right now. Please try again later."
 
-        # Add to conversation history
-        add_to_history("Conversation", "System", f"{attachment.filename} received and processed")
-        add_to_history_bot("Conversation", "", response_text)
+        # Add to conversation history for the main file details
+        add_to_history_bot("", response_text)
 
-        # Send the response to the channel
-        await channel.send(response_text)
-        await reading_message.delete()
+        # Send the main response to the channel
+        await send_message(channel, response_text)
+
+        # Now process and generate the Additional File Details
         try:
-            response2 = model_file.generate_content([file, attachment.filename])
+            if file_extension in ['docx', 'xlsx', 'xls', 'pptx', 'ppt', 'mcmeta']:
+                response2 = model_file_flash.generate_content([f"{attachment.filename} DETAILS: '{text_content}' | ", full_prompt])
+            else:
+                response2 = model_file_flash.generate_content([file, attachment.filename])
             response_text2 = response2.text.strip()
-            add_to_history("Conversation", "Additional file details", response_text2)
-            print("Used model Pro")
+            add_to_history("Additional file details", response_text2)
+            print("Used model Pro for Additional File Details")
         except Exception as e3:
+            print(f"Failed running Model Pro for Additional File Details, trying Model Pro Advanced | ERROR: {e3}")
             try:
-                response2 = model_file_a.generate_content([file, attachment.filename])
-                response_text2 = response2.text.strip()
-                add_to_history("Conversation", "Additional file details", response_text2)
-                print("Used Model Pro Advanced")
-            except Exception as e2:
-                try:
+                if file_extension in ['docx', 'xlsx', 'xls', 'pptx', 'ppt', 'mcmeta']:
+                    response2 = model_file_flash.generate_content([f"{attachment.filename} DETAILS: '{text_content}' | ", full_prompt])
+                else:
                     response2 = model_file_flash.generate_content([file, attachment.filename])
+                response_text2 = response2.text.strip()
+                add_to_history("Additional file details", response_text2)
+                print("Used Model Pro Advanced for Additional File Details")
+            except Exception as e2:
+                print(f"Failed running Model Pro Advanced for Additional File Details, trying Model Flash | ERROR: {e2}")
+                try:
+                    if file_extension in ['docx', 'xlsx', 'xls', 'pptx', 'ppt', 'mcmeta']:
+                        response2 = model_file_flash.generate_content([f"{attachment.filename} DETAILS: '{text_content}' | ", full_prompt])
+                    else:
+                        response2 = model_file_flash.generate_content([file, attachment.filename])
                     response_text2 = response2.text.strip()
-                    add_to_history("Conversation", "Additional file details", response_text2)
-                    print("Used Model Flash")
+                    add_to_history("Additional file details", response_text2)
+                    print("Used Model Flash for Additional File Details")
                 except Exception as e:
-                    print(f"Failed to run Model Flash, Please try again Later | ERROR: {e}")
-                print(f"Failed running Model Pro Advanced, Running Model Flash | ERROR: {e2}")
-            print(f"Failed running Model Pro, Running Model Pro Advanced | ERROR: {e3}")
 
+                    print(f"Failed to run Model Flash for Additional File Details, Please try again Later | ERROR: {e}")
+
+        # Remove the reading message once done
+        await reading_message.delete()
+
+    except FileNotFoundError as fnf_error:
+        await channel.send(f"Error: {fnf_error}")
+        print(f"FileNotFoundError: {fnf_error}")
     except Exception as e:
         await channel.send(f"Error processing file: {e}")
         print(f"Error processing file: {e}")
 
     finally:
-        # Clean up the local file
+        # Remove the file from the system after processing
         if os.path.exists(file_path):
             os.remove(file_path)
-            print(f"Deleted file: {file_path}")
-
 
 def split_long_message(message, max_length=2000):
     """
@@ -908,24 +1138,24 @@ async def on_message(message):
     member_name = display_name
 
     if ai_toggle and not message.content.startswith("/") and message.guild:
-        add_to_history("Conversation", display_name, message.content)
+        add_to_history(display_name, message.content)
 
         if is_youtube_url(message.content):
             await handle_youtube_url(message.content, message.channel, prompt=message.content)
         elif message.attachments:
             for attachment in message.attachments:
                 if attachment.filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif')):
-                    await handle_image_attachment(attachment, message.channel, prompt=message.content)
+                    await handle_image_attachment(attachment, message.channel, prompt=message.content, message=message)
                 elif attachment.filename.lower().endswith(('mp4', 'avi', 'mkv', 'mov', 'mp3', 'wav', 'aac')):
-                    await handle_media_attachment(attachment, message.channel)
+                    await handle_media_attachment(attachment, message.channel, message=message)
 
-                elif attachment.filename.lower().endswith(('pdf', 'docx', 'md', 'markdown', 'py', 'js', 'bat', 'xlsx', 'pptx', 'csv', 'txt', 'json', 'log', 'html', 'css', 'mcmeta', 'ppt', 'doc', 'xls')):
-                    await handle_files_attachment(attachment, message.channel, prompt=message.content)
-                    
+                elif attachment.filename.lower().endswith(('pdf', 'docx', 'md', 'py', 'js', 'bat', 'xlsx', 'pptx', 'csv', 'txt', 'json', 'log', 'html', 'css', 'mcmeta')):
+                    await handle_files_attachment(attachment, message.channel, prompt=message.content, message=message)
+
         else:
             try:
                 async with message.channel.typing():
-                    history = "\n".join(conversation_history["Conversation"])
+                    history = get_conversation_history(message) # Use the function to get history
                     full_prompt = f"{history}\n{display_name}: {message.content}"
                     response = model.generate_content(full_prompt)  # Assuming 'model' is your language model
                     response_text = response.text.strip()
@@ -936,17 +1166,17 @@ async def on_message(message):
                         if text_after_command:
                             # Generate the text after "/img"
                             prompt_response_text = text_after_command
-                            add_to_history_bot("Conversation", "", f"/img {prompt_response_text}")
+                            add_to_history_bot("", f"/img {prompt_response_text}")
                         else:
-                            history = "\n".join(conversation_history["Conversation"])
+                            history = get_conversation_history(message) 
                             full_prompt = f"{history}\nVisualizer: What image do you want to generate?: "
                             response = model.generate_content(full_prompt)
                             prompt_response_text = response.text.strip()
-                            add_to_history_bot("Conversation", "", f"/img {prompt_response_text}")
+                            add_to_history_bot("", f"/img {prompt_response_text}")
                         await message.channel.send("Generating image...")
-                        add_to_history("Conversation", "System", f"Generating image: {prompt_response_text}")
+                        add_to_history("System", f"Generating image: {prompt_response_text}")
                         if HUGGING_FACE_API == "HUGGING_FACE_API_KEY":
-                            add_to_history("Conversation", "Error", "Failed to generate image! Invalid API Key.")
+                            add_to_history("Error", "Failed to generate image! Invalid API Key.")
                             await message.channel.send("Failed to generate image! Invalid API Key.")
                             print("Failed to generate image! Invalid API Key, Please enter a valid hugging face API Key into system/config.py!")
                         else:
@@ -1005,28 +1235,29 @@ async def on_message(message):
                                     # Design and send the embed
                                     embed = discord.Embed(title="Generated Image!",
                                                         description=f"{prompt_response_text}",
-                                                        color=0x00ff00)
+                                                        color=embed_colors)
                                     embed.set_image(url="attachment://generated_image.png")
                                     embed.set_footer(text=f"Generated by {NAME}")
                                     await message.channel.send(file=discord.File(image_path), embed=embed)
-                                    add_to_history("Conversation", "Generated Image Details", response_text)
+                                    add_to_history("Generated Image Details", response_text)
                                     await send_message(message.channel, response_text)
 
                                     os.remove(image_path)
                                 except Exception as e:
+
                                     await message.channel.send("Error processing the image, Please try again later.")
-                                    add_to_history("Conversation", "System", f"Error processing the image: {str(e)}")
+                                    add_to_history("System", f"Error processing the image: {str(e)}")
                                     print(f"Error processing image: {e}")
-                                    history = "\n".join(conversation_history["Conversation"])
+                                    history = get_conversation_history(message) # Use the function to get history
                                     full_prompt = f"{history}\nError processing the image: {str(e)}"
                                     response = model.generate_content(full_prompt)  # Using the original language model
                                     response_text = response.text.strip()
-                                    add_to_history_bot("Conversation", "", response_text)
+                                    add_to_history_bot("", response_text)
                                     await message.channel.send(response_text)
 
                             else:
                                 print('Error:', response.status_code, response.text)
-                                add_to_history("Conversation", "Error", f"Failed to generate image: {response.status_code} | {response.text}")
+                                add_to_history("Error", f"Failed to generate image: {response.status_code} | {response.text}")
                                 await message.channel.send("An error occurred while generating the image.")
 
                     elif response_text.startswith("/music"):
@@ -1036,16 +1267,16 @@ async def on_message(message):
                         if text_after_command:
                             # Generate music based on the prompt
                             prompt = text_after_command
-                            add_to_history_bot("Conversation", " ", f"/music {prompt}")
+                            add_to_history_bot(" ", f"/music {prompt}")
                         else:
                             # Ask for a prompt if none is provided
-                            add_to_history_bot("Conversation", " ", "/music")
-                            history = "\n".join(conversation_history["Conversation"])
-                            add_to_history("Conversation", "System", "What kind of music do you want to generate?")
+                            add_to_history_bot(" ", "/music")
+                            history = get_conversation_history(message) # Use the function to get history
+                            add_to_history("System", "What kind of music do you want to generate?")
                             full_prompt = f"{history}\nSystem: What kind of music do you want me to generate?: "
                             response = model.generate_content(full_prompt)
                             prompt = response.text.strip()
-                            add_to_history_bot("Conversation", " ", prompt)
+                            add_to_history_bot(" ", prompt)
 
                         # Music Generation Logic (Integrated from generate_music function)
                         if HUGGING_FACE_API == "YOUR_HUGGING_FACE_API_KEY":
@@ -1113,52 +1344,54 @@ async def on_message(message):
 
                         if text_after_command:
                             # Save the text to core memory
-                            add_to_history_bot("Conversation", "", f"//#m3m0ry9(c0r3// {text_after_command}")
+                            add_to_history_bot("", f"//#m3m0ry9(c0r3// {text_after_command}")
                             timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
                             save_memory(f"{timestamp} - {text_after_command}: ", text_after_command)
                             await send_message(message.channel, "Updated Memory!")
-                            add_to_history("Conversation", "System", "Saved to Core Memory")
+                            add_to_history("System", "Saved to Core Memory")
 
                             try:
                                 async with message.channel.typing():
-                                    add_to_history("Conversation", "Core-Memory", f"Updated Core Memory to: {load_memory()}")
-                                    add_to_history("Conversation", "System", f"Continue talking to {member_name}")
-                                    history = "\n".join(conversation_history["Conversation"])
+                                    add_to_history("Core-Memory", f"Updated Core Memory to: {load_memory()}")
+                                    add_to_history("System", f"Continue talking to {member_name}")
+                                    history = get_conversation_history(message) # Use the function to get history
                                     full_prompt = f"{history}\nSystem: Continue talking to {member_name}"
                                     response = model.generate_content(full_prompt)
                                     response_text = response.text.strip()
-                                    add_to_history_bot("Conversation", "", response_text)
+                                    add_to_history_bot("", response_text)
                                     await send_message(message.channel, response_text)
                             except Exception as e:
+
                                 print(f"Error generating content: {e}")
-                                add_to_history("Conversation", "System", f"Error generating content: {str(e)}")
+                                add_to_history("System", f"Error generating content: {str(e)}")
                                 await message.channel.send("An error occurred while generating the response.")
                         else:
-                            add_to_history_bot("Conversation", "", "//#m3m0ry9(c0r3//")
-                            history = "\n".join(conversation_history["Conversation"])
-                            add_to_history("Conversation", "System", "What do you want to save to your core memory?")
+                            add_to_history_bot("", "//#m3m0ry9(c0r3//")
+                            history = get_conversation_history(message) # Use the function to get history
+                            add_to_history("System", "What do you want to save to your core memory?")
                             full_prompt = f"{history}\nSystem: What do you want to save to your core memory?: "
                             response = model.generate_content(full_prompt)
                             memory_response_text = response.text.strip()
-                            add_to_history_bot("Conversation", "", memory_response_text)
+                            add_to_history_bot("", memory_response_text)
                             response_name = model_name.generate_content(f"SYSTEM: {memory_response_text}")
                             timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
                             save_memory(f"{timestamp} - {response_name.text}: ", memory_response_text)
                             await send_message(message.channel, "Updated Memory!")
-                            add_to_history("Conversation", "System", "Saved to Core Memory")
+                            add_to_history("System", "Saved to Core Memory")
                             try:
                                 async with message.channel.typing():
-                                    add_to_history("Conversation", "Core-Memory", f"Updated Core Memory to: {load_memory()}")
-                                    add_to_history("Conversation", "System", f"Continue talking to {member_name}")
-                                    history = "\n".join(conversation_history["Conversation"])
+                                    add_to_history("Core-Memory", f"Updated Core Memory to: {load_memory()}")
+                                    add_to_history("System", f"Continue talking to {member_name}")
+                                    history = get_conversation_history(message) # Use the function to get history
                                     full_prompt = f"{history}\nSystem: Continue talking to {member_name}"
                                     response = model.generate_content(full_prompt)
                                     response_text = response.text.strip()
-                                    add_to_history_bot("Conversation", "", response_text)
+                                    add_to_history_bot("", response_text)
                                     await send_message(message.channel, response_text)
                             except Exception as e:
+
                                 print(f"Error generating content: {e}")
-                                add_to_history("Conversation", "System", f"Error generating content: {str(e)}")
+                                add_to_history("System", f"Error generating content: {str(e)}")
                                 await message.channel.send("An error occurred while generating the response.")
 
                     elif response_text.startswith("/search*yt"):
@@ -1168,13 +1401,13 @@ async def on_message(message):
                         if text_after_command:
                             search_query = text_after_command
                         else:
-                            add_to_history_bot("Conversation", " ", "/search*yt")
-                            history = "\n".join(conversation_history["Conversation"])
-                            add_to_history("Conversation", "System", "What do you want to search on YouTube?")
+                            add_to_history_bot(" ", "/search*yt")
+                            history = get_conversation_history(message) # Use the function to get history
+                            add_to_history("System", "What do you want to search on YouTube?")
                             full_prompt = f"{history}\nSystem: What do you want to search on YouTube?: "
                             response = model.generate_content(full_prompt)
                             query_response_text = response.text.strip()
-                            add_to_history_bot("Conversation", " ", query_response_text)
+                            add_to_history_bot(" ", query_response_text)
                             search_query = f"Youtube Video: {query_response_text}"
 
                         web = await send_message(message.channel, "Searching YouTube...")
@@ -1189,20 +1422,22 @@ async def on_message(message):
                             )
                             time.sleep(1)
                             try:
-                                add_to_history("Conversation", "Search", results)
-                                add_to_history("Conversation", "System_Search", "Ok, tell the user about those YouTube videos")
-                                history = "\n".join(conversation_history["Conversation"])
+                                add_to_history("Search", results)
+                                add_to_history("System_Search", "Ok, tell the user about those YouTube videos")
+                                history = get_conversation_history(message) # Use the function to get history
                                 full_prompt = f"{history}\nSearch: {results}"
                                 response = model.generate_content(full_prompt)
                                 response_text = response.text.strip()
-                                add_to_history("Conversation", "Me", response_text)
+                                add_to_history("Me", response_text)
                                 await send_message(message.channel, response_text)
                             except Exception as e:
+
                                 print(f"Error generating content: {e}")
                                 return "An error occurred while generating the response."
                         except Exception as e:
+
                             await send_message(message.channel, f"Sorry, it seems like you have reached the limit for the YouTube search. Please try again later.")
-                            add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\nSorry, it seems like you have reached the limit for the YouTube search. Please try again later.\nERROR: {e}")               
+                            add_to_history("Failed-Search", f"An error occurred during search. Please try again later.\nSorry, it seems like you have reached the limit for the YouTube search. Please try again later.\nERROR: {e}")               
                     elif response_text.startswith("/search"):
                         # Extract the text after "/search"
                         text_after_command = response_text[len("/search"):].strip()
@@ -1210,13 +1445,13 @@ async def on_message(message):
                         if text_after_command:
                             search_query = text_after_command
                         else:
-                            add_to_history_bot("Conversation", " ", "/search")
-                            history = "\n".join(conversation_history["Conversation"])
-                            add_to_history("Conversation", "System", "What do you want to search?")
+                            add_to_history_bot(" ", "/search")
+                            history = get_conversation_history(message) # Use the function to get history
+                            add_to_history("System", "What do you want to search?")
                             full_prompt = f"{history}\nSystem: What do you want to search?: "
                             response = model.generate_content(full_prompt)
                             query_response_text = response.text.strip()
-                            add_to_history_bot("Conversation", " ", query_response_text)
+                            add_to_history_bot(" ", query_response_text)
                             search_query = query_response_text
 
                         web = await send_message(message.channel, "Searching the web...")
@@ -1231,27 +1466,30 @@ async def on_message(message):
                             )
                             time.sleep(1)
                             try:
-                                add_to_history("Conversation", "Search", results)
-                                add_to_history("Conversation", "System_Search", "Ok, tell the user about that search")
-                                history = "\n".join(conversation_history["Conversation"])
+                                add_to_history("Search", results)
+                                add_to_history("System_Search", "Ok, tell the user about that search")
+                                history = get_conversation_history(message) # Use the function to get history
                                 full_prompt = f"{history}\nSearch: {results}"
                                 response = model.generate_content(full_prompt)
                                 response_text = response.text.strip()
-                                add_to_history("Conversation", "Me", response_text)
+                                add_to_history("Me", response_text)
                                 await send_message(message.channel, response_text)
                             except Exception as e:
+
                                 print(f"Error generating content: {e}")
                                 return "An error occurred while generating the response."
                         except Exception as e:
+
                             await send_message(message.channel, f"Sorry, it seems like you have reached the limit for the web search. Please try again later.")
-                            add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\nSorry, it seems like you have reached the limit for the web search. Please try again later.\nERROR: {e}")
+                            add_to_history("Failed-Search", f"An error occurred during search. Please try again later.\nSorry, it seems like you have reached the limit for the web search. Please try again later.\nERROR: {e}")
                     else:
-                        add_to_history_bot("Conversation", "", response_text)
+                        add_to_history_bot("", response_text)
                         await send_message(message.channel, response_text)
 
             except Exception as e:
+
                 print(f"Error generating content: {e}")
-                add_to_history("Conversation", "System", f"Error generating content: {str(e)}")
+                add_to_history("System", f"Error generating content: {str(e)}")
                 await message.channel.send("An error occurred while generating the response.")
     else:
         await bot.process_commands(message)
@@ -1278,26 +1516,26 @@ async def aitoggle(ctx, Toggle: str):
         if not ai_toggle:
             ai_toggle = True
             await ctx.send("Automatic AI responses have been enabled.")
-            add_to_history("Conversation", member_name, f"/aitoggle {Toggle}")
-            add_to_history("Conversation", "System", "Automatic AI responses have been enabled.")
+            add_to_history(member_name, f"/aitoggle {Toggle}")
+            add_to_history("System", "Automatic AI responses have been enabled.")
         else:
             await ctx.send("Automatic AI responses were already enabled.")
-            add_to_history("Conversation", member_name, f"/aitoggle {Toggle}")
-            add_to_history("Conversation", "System", "Automatic AI responses were already enabled.")
+            add_to_history(member_name, f"/aitoggle {Toggle}")
+            add_to_history("System", "Automatic AI responses were already enabled.")
     elif Toggle.lower() == "off":
         if ai_toggle:
             ai_toggle = False
             await ctx.send("Automatic AI responses have been disabled.")
-            add_to_history("Conversation", member_name, f"/aitoggle {Toggle}")
-            add_to_history("Conversation", "System", "Automatic AI responses have been disabled.")
+            add_to_history(member_name, f"/aitoggle {Toggle}")
+            add_to_history("System", "Automatic AI responses have been disabled.")
         else:
             await ctx.send("Automatic AI responses were already disabled.")
-            add_to_history("Conversation", member_name, f"/aitoggle {Toggle}")
-            add_to_history("Conversation", "System", "Automatic AI responses were already disabled.")
+            add_to_history(member_name, f"/aitoggle {Toggle}")
+            add_to_history("System", "Automatic AI responses were already disabled.")
     else:
         await ctx.send(f"{Toggle} is an invalid option. Use 'on' or 'off'.")
-        add_to_history("Conversation", member_name, f"/aitoggle {Toggle}")
-        add_to_history("Conversation", "System", f"{Toggle} is an invalid option. Use 'on' or 'off'.")
+        add_to_history(member_name, f"/aitoggle {Toggle}")
+        add_to_history("System", f"{Toggle} is an invalid option. Use 'on' or 'off'.")
 
 #VOICE CHAT (UNDER-DEVELOPMENT)
 @bot.command(name='vc', help='VoiceChat with BatchBot (Under-Development)')
@@ -1305,15 +1543,15 @@ async def vc(ctx, action, channel_name=None):
     member = ctx.author.display_name
     if action == 'join':
         if not channel_name:
-            add_to_history("Conversation", member, "/vc join") 
-            add_to_history("Conversation", "System", "Please specify a voice channel to join.")
+            add_to_history(member, "/vc join") 
+            add_to_history("System", "Please specify a voice channel to join.")
             await ctx.send("Please specify a voice channel to join.")
             return
 
         voice_channel = get(ctx.guild.voice_channels, name=channel_name)
         if not voice_channel:
-            add_to_history("Conversation", member, f"/vc join {channel_name}") 
-            add_to_history("Conversation", "System", f"Voice channel `{channel_name}` not found.")
+            add_to_history(member, f"/vc join {channel_name}") 
+            add_to_history("System", f"Voice channel `{channel_name}` not found.")
             await ctx.send(f"Voice channel `{channel_name}` not found.")
             return
 
@@ -1321,22 +1559,22 @@ async def vc(ctx, action, channel_name=None):
             await ctx.voice_client.move_to(voice_channel)
         else:
             await voice_channel.connect()
-        add_to_history("Conversation", member, f"/vc join {channel_name}") 
-        add_to_history("Conversation", "System", f"Joined the {channel_name} voice channel")
+        add_to_history(member, f"/vc join {channel_name}") 
+        add_to_history("System", f"Joined the {channel_name} voice channel")
         await ctx.send(f"Joined the {channel_name} voice channel")
     elif action == 'leave':
         if ctx.voice_client:
             await ctx.voice_client.disconnect()
-            add_to_history("Conversation", member, "/vc leave") 
-            add_to_history("Conversation", "System", "Left the voice channel.")
+            add_to_history(member, "/vc leave") 
+            add_to_history("System", "Left the voice channel.")
             await ctx.send("Left the voice channel.")
         else:
-            add_to_history("Conversation", member, "/vc leave") 
-            add_to_history("Conversation", "System", "I'm not connected to a voice channel.")
+            add_to_history(member, "/vc leave") 
+            add_to_history("System", "I'm not connected to a voice channel.")
             await ctx.send("I'm not connected to a voice channel.")
     else:
-        add_to_history("Conversation", member, f"/vc {action}")
-        add_to_history("Conversation", "System", f"{action} is Invalid action. Use 'join' or 'leave'.")
+        add_to_history(member, f"/vc {action}")
+        add_to_history("System", f"{action} is Invalid action. Use 'join' or 'leave'.")
         await ctx.send(f"{action} is Invalid action. Use 'join' or 'leave'.")
 
 # Function to send a random image from the 'images' directory
@@ -1409,6 +1647,7 @@ async def rimage(ctx, *, query: str):
                 with open(os.path.join('system/RAM/search-img/', image_name), 'wb') as f:
                     f.write(response.content)
             except Exception as e:
+
                 download_failed.append({'image_url': image_url, 'error': str(e)})
                 await ctx.send(f"Error downloading image from {image_url}. Please try again later.")
 
@@ -1416,21 +1655,21 @@ async def rimage(ctx, *, query: str):
         await send_random_image(ctx, num_images)
 
         # Optionally, log the search history
-        add_to_history("Conversation", member_name, f"/search*img {query}")
-        add_to_history("Conversation", "Image", query)
-        add_to_history("Conversation", "System", f"Successfully searched for image `{query}`!")
+        add_to_history(member_name, f"/search*img {query}")
+        add_to_history("Image", query)
+        add_to_history("System", f"Successfully searched for image `{query}`!")
         await ctx.send(f"Successfully searched for image `{query}`!")
     except Exception as e:
         member_name = ctx.author.display_name
         await ctx.send(f"Sorry, it seems like you have reached the limit for the web search. Please try again later.")
-        add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\n ERROR: {e}")
-        add_to_history("Conversation", member_name, f"/search*img {query}")
+        add_to_history("Failed-Search", f"An error occurred during search. Please try again later.\n ERROR: {e}")
+        add_to_history(member_name, f"/search*img {query}")
 
 @bot.command(name="search")
 async def search(ctx, *, query: str):
     member_name = ctx.author.display_name
     search_query = query
-    add_to_history("Conversation", member_name, f"/search {query}")
+    add_to_history(member_name, f"/search {query}")
     web = await ctx.send(f"Searching the web...")
 
     try:
@@ -1449,30 +1688,31 @@ async def search(ctx, *, query: str):
         try:
             async with ctx.channel.typing():
                 member_name = ctx.author.display_name
-                add_to_history("Conversation", "Search", results)
-                history = "\n".join(conversation_history["Conversation"])
+                add_to_history("Search", results)
+                history = get_conversation_history(ctx) # Use the function to get history
                 full_prompt = f"{history}\nSearch: {results}"
                 # Use the global 'model' instance here
                 response = model.generate_content(full_prompt)
                 response_text = response.text.strip()
-                add_to_history("Conversation", "Me", response_text)
+                add_to_history("Me", response_text)
                 await generating.delete()
                 await ctx.reply(response_text)
         except Exception as e:
+
             await generating.delete()
             print(f"Error generating content: {e}")
             return "An error occurred while generating the response."
     except Exception as e:
         await web.delete()
         await ctx.send(f"Sorry, it seems like you have reached the limit for the web search. Please try again later.")
-        add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
-        add_to_history("Conversation", member_name, f"/search {query}")
+        add_to_history("Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
+        add_to_history(member_name, f"/search {query}")
 
 @bot.command(name="search_yt")
 async def search_yt(ctx, *, query: str):
     member_name = ctx.author.display_name
     search_query = f"Youtube Video: {query}"
-    add_to_history("Conversation", member_name, f"/search_yt {query}")
+    add_to_history(member_name, f"/search_yt {query}")
     web = await ctx.send(f"Searching Youtube...")
 
     try:
@@ -1491,24 +1731,25 @@ async def search_yt(ctx, *, query: str):
         try:
             async with ctx.channel.typing():
                 member_name = ctx.author.display_name
-                add_to_history("Conversation", "Search", results)
-                history = "\n".join(conversation_history["Conversation"])
+                add_to_history("Search", results)
+                history = get_conversation_history(ctx) # Use the function to get history
                 full_prompt = f"{history}\nSearch: {results}"
                 # Use the global 'model' instance here
                 response = model.generate_content(full_prompt)
                 response_text = response.text.strip()
-                add_to_history("Conversation", "Me", response_text)
+                add_to_history("Me", response_text)
                 await generating.delete()
                 await ctx.reply(response_text)
         except Exception as e:
+
             await generating.delete()
             print(f"Error generating content: {e}")
             return "An error occurred while generating the response."
     except Exception as e:
         await web.delete()
         await ctx.send(f"Sorry, it seems like you have reached the limit for the web search. Please try again later.")
-        add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
-        add_to_history("Conversation", member_name, f"/search {query}")
+        add_to_history("Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
+        add_to_history(member_name, f"/search {query}")
 
 @bot.command(name="search_save")
 async def search_save(ctx, *, query: str):
@@ -1529,27 +1770,27 @@ async def search_save(ctx, *, query: str):
 
         save_search(query, results)
 
-        add_to_history("Conversation", member_name, f"/search_save {query}")
-        add_to_history("Conversation", "Search", results)
-        add_to_history("Conversation", "System", f"Successfully searched for `{query}` and saved it to saved searches!")
+        add_to_history(member_name, f"/search_save {query}")
+        add_to_history("Search", results)
+        add_to_history("System", f"Successfully searched for `{query}` and saved it to saved searches!")
         await ctx.send(f"Successfully searched for `{query}` and saved it to saved searches!")
     except Exception as e:
         await ctx.send(f"Sorry, it seems like you have reached the limit for the web search. Please try again later.")
-        add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
-        add_to_history("Conversation", member_name, f"/search_save {query}")
+        add_to_history("Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
+        add_to_history(member_name, f"/search_save {query}")
 
 @bot.command(name="search_view")
 async def search_view(ctx):
     member_name = ctx.author.display_name
     saved_searches = load_saved_searches()
     if saved_searches:
-        add_to_history("Conversation", member_name, "/search_view")
-        add_to_history("Conversation", "System", f"Saved Searches:\n{saved_searches}")
+        add_to_history(member_name, "/search_view")
+        add_to_history("System", f"Saved Searches:\n{saved_searches}")
         await ctx.send(f"Saved Searches:\n{saved_searches}")
     else:
         await ctx.send("No saved searches found.")
-        add_to_history("Conversation", member_name, "/search_view")
-        add_to_history("Conversation", "System", "No saved searches found.")
+        add_to_history(member_name, "/search_view")
+        add_to_history("System", "No saved searches found.")
 
 
 @bot.command(name="search_list")
@@ -1557,13 +1798,13 @@ async def search_list(ctx):
     member_name = ctx.author.display_name
     searches_list = get_saved_searches_list()
     if searches_list:
-        add_to_history("Conversation", member_name, "/search_list")
-        add_to_history("Conversation", "System", f"Saved Searches List:\n{searches_list}")
+        add_to_history(member_name, "/search_list")
+        add_to_history("System", f"Saved Searches List:\n{searches_list}")
         await ctx.send(f"Saved Searches List:\n{searches_list}")
 
     else:
-        add_to_history("Conversation", member_name, "/search_list")
-        add_to_history("Conversation", "System", "No saved searches found.")
+        add_to_history(member_name, "/search_list")
+        add_to_history("System", "No saved searches found.")
         await ctx.send("No saved searches found.")
 
 @bot.command(name="search_remove")
@@ -1571,12 +1812,12 @@ async def search_remove(ctx, *, query_or_number: str):
     member_name = ctx.author.display_name
     remove_saved_search(query_or_number)
     if query_or_number:
-        add_to_history("Conversation", member_name, f"/search_remove {query_or_number}")
-        add_to_history("Conversation", "System", f"Successfully removed search `{query_or_number}`.")
+        add_to_history(member_name, f"/search_remove {query_or_number}")
+        add_to_history("System", f"Successfully removed search `{query_or_number}`.")
         await ctx.send(f"Successfully removed search `{query_or_number}`.")
     else:
-        add_to_history("Conversation", member_name, f"/search_remove {query_or_number}")
-        add_to_history("Conversation", "System", f"`{query_or_number}` doesn not exist..")
+        add_to_history(member_name, f"/search_remove {query_or_number}")
+        add_to_history("System", f"`{query_or_number}` doesn not exist..")
         await ctx.send(f"`{query_or_number}` doesn not exist.")
 
 @bot.command(name="search_show")
@@ -1591,16 +1832,16 @@ async def searchshow(ctx, *, query: str):
           timelimit='7d',
           max_results=2
         )
-        add_to_history("Conversation", member_name, f"/search_show {query}")
-        add_to_history("Conversation", "Search", results)
-        add_to_history("Conversation", "System", f"Successfully Searched for `{query}` and added it to bot's memory!")
-        add_to_history("Conversation", "System", f"Search Results: FOR {query}")
+        add_to_history(member_name, f"/search_show {query}")
+        add_to_history("Search", results)
+        add_to_history("System", f"Successfully Searched for `{query}` and added it to bot's memory!")
+        add_to_history("System", f"Search Results: FOR {query}")
         await ctx.send(f"Successfully Searched for `{query}` and added it to bot's memory!")
         await ctx.send(f"Search: {results}")
     except Exception as e:
         await ctx.send(f"Sorry, it seems like you have reached the limit for the web search. Please try again later.")
-        add_to_history("Conversation", "Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
-        add_to_history("Conversation", member_name, f"/search_show {query}")
+        add_to_history("Failed-Search", f"An error occurred during search. Please try again later.\n Sorry, it seems like you have reached the limit for the web search. Please try again later.\n ERROR: {e}")
+        add_to_history(member_name, f"/search_show {query}")
 
 
 @bot.command(name="/help")
@@ -1651,13 +1892,13 @@ async def ai(ctx: commands.Context, *, Prompt: str):
     try:
         async with ctx.channel.typing():
             member_name = ctx.author.display_name
-            add_to_history("Conversation", member_name, Prompt)
-            history = "\n".join(conversation_history["Conversation"])
+            add_to_history(member_name, Prompt)
+            history = get_conversation_history(ctx) # Use the function to get history
             full_prompt = f"{history}\n{member_name}: {Prompt}"
             # Use the global 'model' instance here
             response = model.generate_content(full_prompt)
             response_text = response.text.strip()
-            add_to_history_bot("Conversation", "", response_text)
+            add_to_history_bot("", response_text)
             await ctx.reply(response_text)
     except Exception as e:
         print(f"Error generating content: {e}")
@@ -1704,25 +1945,25 @@ async def timer(ctx, seconds: int):
     except ValueError as e:
         await ctx.send(f"Error: {e}")
 
-@bot.command(name="say" or "echo")
+@bot.command(name="say", help='Says something')
 async def say(ctx: commands.Context, *, say: str):
     member_name = ctx.author.display_name
-    add_to_history("Conversation", member_name, f"/say {say}")
+    add_to_history(member_name, f"/say {say}")
     channel_name = None
     if "channel: " in say:
         channel_name = say.split("channel: ")[1].strip()
         say = say.split("channel: ")[0].strip()
-        add_to_history("Conversation", member_name, f"/say {say} | channel: {channel_name}")
+        add_to_history(member_name, f"/say {say} | channel: {channel_name}")
     elif "#" in say:
         parts = say.split("#")
         if len(parts) > 1: 
             channel_name = parts[1].strip()
             say = parts[0].strip()
-            add_to_history("Conversation", member_name, f"/say {say} | channel: {channel_name}")
+            add_to_history(member_name, f"/say {say} | channel: {channel_name}")
     elif say.startswith("<#") and say.endswith(">"):
         channel_name = say[2:-1] 
         say = say.split("<#")[0].strip()
-        add_to_history("Conversation", member_name, f"/say {say} | channel: {channel_name}")
+        add_to_history(member_name, f"/say {say} | channel: {channel_name}")
     target_channel = None
     if channel_name:
         if channel_name.isdigit():  
@@ -1732,84 +1973,102 @@ async def say(ctx: commands.Context, *, say: str):
         if target_channel:
             echoed_message = f"{say}"
             await target_channel.send(echoed_message)
-            add_to_history("Conversation", "System", say)
+            add_to_history("System", say)
         else:
             await ctx.send(f"Channel '{channel_name}' not found.")
-            add_to_history("Conversation", "System", f"Channel '{channel_name}' not found.")
+            add_to_history("System", f"Channel '{channel_name}' not found.")
     else:
         echoed_message = f"{say}"
         await ctx.send(echoed_message)
-        add_to_history("Conversation", "System", say)
+        add_to_history("System", say)
 
-@bot.command(name="add")
+@bot.command(name="add", help='Adds instructions')
 async def add(ctx: commands.Context, *, instruction: str):
     echoed_message = "added " f"`{instruction}`" " to BatchBot's instructions"
     await ctx.send(echoed_message)
-    add_to_history("Conversation", "System_instructions", f"{instruction}")
-    history = "\n".join(conversation_history["Conversation"])
+    add_to_history("System_instructions", f"{instruction}")
+    history = get_conversation_history(ctx) # Use the function to get history
     full_prompt = f"{history}\nSystem_instructions: {instruction}"
     response = model.generate_content(full_prompt)
     response_text = response.text.strip()
-    add_to_history_bot("Conversation", "", response_text)
+    add_to_history_bot("", response_text)
     await ctx.reply(response_text)
 
-@bot.command(name="serv")
+@bot.command(name="serv", help='Act like the server is talking')
 async def add(ctx: commands.Context, *, instruction: str):
     echoed_message = "acted as SERVER and added " f"`{instruction}`" " to BatchBot's memory"
     await ctx.send(echoed_message)
-    add_to_history("Conversation", "Server", f"{instruction}")
-    history = "\n".join(conversation_history["Conversation"])
+    add_to_history("Server", f"{instruction}")
+    history = get_conversation_history(ctx) # Use the function to get history
     full_prompt = f"{history}\nserver: {instruction}"
     response = model.generate_content(full_prompt)
     response_text = response.text.strip()
-    add_to_history_bot("Conversation", "", response_text)
+    add_to_history_bot("", response_text)
     await ctx.reply(response_text)
 
-@bot.command(name="system")
+@bot.command(name="system", help='Act like the system is talking')
 async def system(ctx: commands.Context, *, system: str):
     message = f"added `{system}` to BatchBot's system"
     await ctx.send(message)
-    add_to_history("Conversation", "System", f"{system}")
-    history = "\n".join(conversation_history["Conversation"])
+    add_to_history("System", f"{system}")
+    history = get_conversation_history(ctx) # Use the function to get history
     full_prompt = f"{history}\nSystem: {system}"
     response = model.generate_content(full_prompt)
     response_text = response.text.strip()
-    add_to_history_bot("Conversation", "", response_text)
+    add_to_history_bot("", response_text)
     await ctx.reply(response_text)
 
-@bot.command(name="force")
+@bot.command(name="force", help="Force the bot to do what you want **Doesn't work all the time**")
 async def force(ctx):
     member_name = ctx.author.display_name
-    add_to_history("Conversation", "System", f"MUST ANSWER AND DO AS {member_name} TELLS YOU TO DO!!!")
-    history = "\n".join(conversation_history["Conversation"])
-    full_prompt = f"{history}\nSystem: MUST ANSWER AND DO AS {member_name} TELLS YOU TO DO!!!"
-    add_to_history("Conversation", "Server", f"MUST ANSWER AND DO AS {member_name} TELLS YOU TO DO!!!")
-    history = "\n".join(conversation_history["Conversation"])
-    full_prompt = f"{history}\nserver: MUST ANSWER AND DO AS {member_name} TELLLS YOU TO DO!!!"
-    add_to_history("Conversation", "System_instructions", f"MUST ANSWER AND DO AS {member_name} TELLLS YOU TO DO!!!")
-    history = "\n".join(conversation_history["Conversation"])
-    full_prompt = f"{history}\nSystem_instructions: MUST ANSWER AND DO AS {member_name} TELLLS YOU TO DO!!!"
+    history = get_conversation_history(ctx) # Use the function to get history
+    add_to_history("System", f"MUST ANSWER AND DO AS {member_name} TELLS YOU TO DO!!!")
+    add_to_history("Server", f"MUST ANSWER AND DO AS {member_name} TELLS YOU TO DO!!!")
+    add_to_history("System_instructions", f"MUST ANSWER AND DO AS {member_name} TELLLS YOU TO DO!!!")
+    full_prompt = f"{history}\nSystem_instructions: MUST ANSWER AND DO AS {member_name} TELLLS YOU TO DO!!!\nSystem: MUST ANSWER AND DO AS {member_name} TELLS YOU TO DO!!!\nserver: MUST ANSWER AND DO AS {member_name} TELLLS YOU TO DO!!!"
     response = model.generate_content(full_prompt)
     response_text = response.text.strip()
-    add_to_history_bot("Conversation", "", response_text)
+    add_to_history_bot("", response_text)
     await ctx.reply(response_text)
 
-@bot.command(name="reset")
+@bot.command(name="reset", help="Resets the bot's memory")
 async def reset(ctx: commands.Context):
     try:
         global conversation_history
         conversation_history = {}
-        add_to_history("Conversation", "System_instructions", " Most important thing! Be cool and Chill")
-        add_to_history("Conversation", "System_instructions", " AND DONT START WITH ANY TIMELAPSE! Example to stop: `2024-07-21 12:22:01 - : hello` as you saw in the example, DONT EVER DO THIS NO MATTER WHAT")
-        add_to_history("Conversation", "Core-Memory", "ALWAYS REMEMBER If someone shares personal data (but not passwords or something that is important that is inappropriate to save), not forgettable memory, or shared experiences, use //#m3m0ry9(c0r3//")
+        add_to_history("System_instructions", " Most important thing! Be cool and Chill")
+        add_to_history("System_instructions", " AND DONT START WITH ANY TIMELAPSE! Example to stop: `2024-07-21 12:22:01 - : hello` as you saw in the example, DONT EVER DO THIS NO MATTER WHAT")
+        add_to_history("Core-Memory", "ALWAYS REMEMBER If someone shares personal data (but not passwords or something that is important that is inappropriate to save), not forgettable memory, or shared experiences, use //#m3m0ry9(c0r3//")
         save_history()
+        try:
+            # Reset Gemini Chats //:
+            chat_session = model.start_chat(history=[])
+            chat_session_pro_latest = model_pro_latest.start_chat(history=[])
+            chat_session_pro_advanced = model_pro_advanced.start_chat(history=[])
+            chat_session_flash = model_flash.start_chat(history=[])
+        except Exception as e:
+
+            await ctx.reply("Failed to erase memory!")
+            print(e)
+            member_name = ctx.author.display_name
+            add_to_history(member_name, "/reset")
+            add_to_history("System", "Failed to erase memory!")
         await ctx.reply("Memory successfully erased!")
     except Exception as e:
         await ctx.reply("Failed to erase memory!")
         print(e)
         member_name = ctx.author.display_name
-        add_to_history("Conversation", member_name, "/reset")
-        add_to_history("Conversation", "System", "Failed to erase memory!")
+        add_to_history(member_name, "/reset")
+        add_to_history("System", "Failed to erase memory!")
+        try:
+            # Reset Gemini Chats //:
+            chat_session = model.start_chat(history=[])
+            chat_session_pro_latest = model_pro_latest.start_chat(history=[])
+            chat_session_pro_advanced = model_pro_advanced.start_chat(history=[])
+            chat_session_flash = model_flash.start_chat(history=[])
+        except Exception as e:
+
+            print(e)
 
 @bot.command(name="profile")
 async def profile(ctx, member: discord.Member = None):
@@ -1822,8 +2081,8 @@ async def profile(ctx, member: discord.Member = None):
     embed.set_thumbnail(url=member.avatar.url)
     await ctx.send(embed=embed)
     member_name = ctx.author.display_name
-    add_to_history("Conversation", member_name, f"/profile {member}")
-    add_to_history("Conversation", "System", f"Here is the info we found for {member}, ID: {member.id}, Name: {member.display_name}, Created at: {member.created_at}, Joined at: {member.joined_at}")
+    add_to_history(member_name, f"/profile {member}")
+    add_to_history("System", f"Here is the info we found for {member}, ID: {member.id}, Name: {member.display_name}, Created at: {member.created_at}, Joined at: {member.joined_at}")
 
 @bot.command(name="serverinfo")
 async def server_info(ctx):
@@ -1835,8 +2094,8 @@ async def server_info(ctx):
     embed.set_thumbnail(url=guild.icon.url if guild.icon else "")
     await ctx.send(embed=embed)
     member_name = ctx.author.display_name
-    add_to_history("Conversation", member_name, f"/serverinfo")
-    add_to_history("Conversation", "System", f"Here is the info about {guild.name}, Server ID: {guild.id}, Member Count: {guild.member_count}, Created at: {guild.created_at}")
+    add_to_history(member_name, f"/serverinfo")
+    add_to_history("System", f"Here is the info about {guild.name}, Server ID: {guild.id}, Member Count: {guild.member_count}, Created at: {guild.created_at}")
 
 @bot.command(name="joke")
 async def joke(ctx):
@@ -1845,13 +2104,13 @@ async def joke(ctx):
         joke_data = response.json()
         await ctx.send(f"{joke_data['setup']} - {joke_data['punchline']}")
         member_name = ctx.author.display_name
-        add_to_history("Conversation", member_name, f"/joke")
-        add_to_history("Conversation", "System", f"{joke_data['setup']} - {joke_data['punchline']}")
+        add_to_history(member_name, f"/joke")
+        add_to_history("System", f"{joke_data['setup']} - {joke_data['punchline']}")
     else:
         await ctx.send("Couldn't fetch a joke at the moment. Try again later!")
         member_name = ctx.author.display_name
-        add_to_history("Conversation", member_name, f"/joke")
-        add_to_history("Conversation", "System", "Couldn't fetch a joke at the moment. Try again later!")
+        add_to_history(member_name, f"/joke")
+        add_to_history("System", "Couldn't fetch a joke at the moment. Try again later!")
 
 model_name_model = genai.GenerativeModel(
   model_name="gemini-1.5-flash",
@@ -1869,7 +2128,7 @@ model_name_model = genai.GenerativeModel(
 if not Image_Model == "stabilityai/stable-diffusion-xl-base-1.0":
     response = model_name_model.generate_content(Image_Model)
     Image_Model_Name = response.text.strip()
-    print(f"Generated Image Model Name: {Image_Model_Name} | You need to reinvite the bot to use the new model")
+    print(f"Generated Image Model Name: {Image_Model_Name} | You need to reinvite the bot once to use the new model")
 else:
     Image_Model_Name = "Stable Diffusion XL Base 1.0"
 
@@ -1882,7 +2141,12 @@ model_choices = [
     app_commands.Choice(name="Stable Diffusion 3 Medium Diffusers", value="stabilityai/stable-diffusion-3-medium-diffusers"),
     app_commands.Choice(name="DALL-E 3 XL V2", value="ehristoforu/dalle-3-xl-v2"),
     app_commands.Choice(name="FLUX.1 Schnell", value="black-forest-labs/FLUX.1-schnell"),
-    app_commands.Choice(name="FLUX Anime 2", value="dataautogpt3/FLUX-anime2")
+    app_commands.Choice(name="FLUX Anime 2", value="dataautogpt3/FLUX-anime2"),
+    app_commands.Choice(name="Chip & DallE (New)", value="Yntec/Chip_n_DallE"),
+    app_commands.Choice(name="Flux.1 DEV (New)", value="black-forest-labs/FLUX.1-dev"),
+    app_commands.Choice(name="Flux.1 DEV LoRA Art (New)", value="Shakker-Labs/FLUX.1-dev-LoRA-Garbage-Bag-Art"),
+    app_commands.Choice(name="Flux.1 DEV LoRA Playful Metropolis Art (New)", value="Shakker-Labs/FLUX.1-dev-LoRA-playful-metropolis"),
+    app_commands.Choice(name="Flux.1 DEV LoRA Add Details (New) (Advanced Details)", value="Shakker-Labs/FLUX.1-dev-LoRA-add-details"),
 ]
 
 @bot.tree.command(name="img", description="Generate an image based on your prompt.")
@@ -1904,18 +2168,36 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
 
         # Use the default model if no model is provided
         if model is None:
-            model = "stabilityai/stable-diffusion-xl-base-1.0"
+            model = f"{Image_Model}"
 
         if model == "stabilityai/stable-diffusion-xl-base-1.0":
             model_name = "Stable Diffusion XL Base 1.0"
+        elif model == f"{Image_Model}":
+            model_name = f"{Image_Model_Name}"
         elif model == "ehristoforu/dalle-3-xl-v2":
             model_name = "DALL-E 3 XL V2"
         elif model == "black-forest-labs/FLUX.1-schnell":
             model_name = "FLUX.1 Schnell"
         elif model == "dataautogpt3/FLUX-anime2":
             model_name = "FLUX Anime 2"
+        elif model == "Yntec/Chip_n_DallE":
+            model_name = "Chip & DallE"
+        elif model == "black-forest-labs/FLUX.1-dev":
+            model_name = "Flux.1 DEV"
+        elif model == "stabilityai/stable-diffusion-3-medium-diffusers":
+            model_name = "Stable Diffusion 3 Medium Diffusers"
+        elif model == "Shakker-Labs/AWPortrait-FL":
+            model_name = "AWPortrait FL"
+        elif model == "Shakker-Labs/FLUX.1-dev-LoRA-Garbage-Bag-Art":
+            model_name = "FLUX.1 DEV LoRA Art"
+        elif model == "Shakker-Labs/FLUX.1-dev-LoRA-playful-metropolis":
+            model_name = "Flux.1 DEV LoRA Playful Metropolis Art"
+        elif model == "Shakker-Labs/FLUX.1-dev-LoRA-add-details":
+            model_name = "Flux.1 DEV LoRA Add Details"
+        else:
+            model_name = "Unkown Model"
 
-        add_to_history("Conversation", member_name, f"/img {prompt} | Model: {model_name}")
+        add_to_history(member_name, f"/img {prompt} | Model: {model_name}")
 
         url = f'https://api-inference.huggingface.co/models/{model}'
         headers = {
@@ -1959,7 +2241,7 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
             return False
 
         success = False
-        if model in ["ehristoforu/dalle-3-xl-v2", "black-forest-labs/FLUX.1-schnell", "dataautogpt3/FLUX-anime2"]:
+        if model in ["ehristoforu/dalle-3-xl-v2", "black-forest-labs/FLUX.1-schnell", "dataautogpt3/FLUX-anime2", "Shakker-Labs/AWPortrait-FL"]:
             success = fetch_image_with_retries(url, headers, data)
         else:
             response = requests.post(url, headers=headers, json=data)
@@ -1986,16 +2268,17 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
                 analysis_result = response.text.strip()
                 print(f"Image analysis: {analysis_result}")
 
-                add_to_history_bot("Conversation", "Generated_image", analysis_result)
+                add_to_history_bot("Generated_image", analysis_result)
 
             except Exception as e:
+
                 print(f"Error analyzing image: {e}")
                 analysis_result = "Error analyzing the image."
-                add_to_history("Conversation", "System", f"Error analyzing the image: {str(e)}")
+                add_to_history("System", f"Error analyzing the image: {str(e)}")
 
             embed = discord.Embed(title="Generated Image!",
                                   description=f"{prompt}\n",
-                                  color=0x00ff00)
+                                  color=embed_colors)
             file = discord.File(image_path, filename="generated_image.png")
             embed.set_image(url="attachment://generated_image.png")
             embed.set_footer(text=f"Generated by {interaction.user.display_name}\nModel: {model_name}")
@@ -2004,7 +2287,7 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
             os.remove(image_path)
 
         else:
-            add_to_history("Conversation", "System", "Failed to generate the image after retries.")
+            add_to_history("System", "Failed to generate the image after retries.")
             await interaction.followup.send("An error occurred while generating the image. Please try again later or select a different model.")
 
 if DEFAULT_MUSIC_MODEL == "facebook/musicgen-small":
@@ -2041,7 +2324,7 @@ async def generate_music(interaction: discord.Interaction, prompt: str, model: s
     else:
         model_name = model
 
-    add_to_history("Conversation", member_name, f"/music {prompt} | Model: {model_name}")
+    add_to_history(member_name, f"/music {prompt} | Model: {model_name}")
     print(f"Using model: {model_name}")
     url = f'https://api-inference.huggingface.co/models/{model}'
     headers = {'Authorization': f'Bearer {api_key}'}
