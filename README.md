@@ -28,10 +28,13 @@ Engage in dynamic conversations with BatchBot using Google Gemini AI models (Gem
 
 ### 🖼️ Image Processing
 Upload images, and BatchBot will use powerful vision models to generate detailed descriptions. It can identify objects, scenes, and emotions within the images.
-
-- **Identify Objects Example:**
+#### Also the new update v2.0.0 has a new feature of batchbot able to give you an image and reviewing the objects in the image!
+- **Identify Objects in the image | Example:**
   - **Prompt:** detect the objects in this image
   - ![bugatti_object_image object](https://github.com/user-attachments/assets/c88bb44f-266b-4a59-aad0-34d59f025502)
+- **Image Recognition | Example:**
+  - ![Image Recognition Example](https://github.com/user-attachments/assets/0f57ab57-28ad-46d1-9863-0e10804e9719)
+
 
 ### 🎥 Video Processing
 Upload videos, and BatchBot will use powerful vision models to generate detailed descriptions. It can identify objects, scenes, and emotions within the video.
