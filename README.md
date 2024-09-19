@@ -1,5 +1,5 @@
 # 🌌 BatchBot: The AI-Powered Discord Bot (Free & Open Source) 🚀
-
+![BatchBot Logo](https://github.com/user-attachments/assets/76b8a6fa-168c-43f8-b9cf-6a439d90b063)
 <div style="border-bottom: 2px solid #00ffff; margin-bottom: 20px;"></div>
 
 ## Introduction
