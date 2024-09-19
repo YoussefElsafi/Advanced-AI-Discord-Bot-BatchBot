@@ -1,4 +1,4 @@
-from system.config import custom_model
+from system.config import custom_model, server_name
 if custom_model:
     from system.config import NAME, custom_model_name, HUGGING_FACE_API
     model = custom_model_name
