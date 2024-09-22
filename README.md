@@ -183,6 +183,25 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - [DuckDuckGo](https://duckduckgo.com/) for the web search API.
 - And all the amazing contributors who have helped improve BatchBot!
 
+## Known Issues and Limitations
+
+BatchBot is under active development, and we are continuously working to improve its stability and features. 
+We acknowledge that some recent updates have unfortunately introduced unexpected errors and crashes due to insufficient testing and verification procedures. We sincerely apologize for any inconvenience this may have caused our users.
+
+We are taking the following steps to address these issues and prevent them from occurring in the future:
+
+* **Enhanced Testing:** We are implementing more rigorous testing protocols, including automated tests and broader user testing, to ensure that future updates are thoroughly vetted before release.
+* **Improved Verification:** We are strengthening our verification processes to catch potential issues earlier in the development cycle. This includes more detailed code reviews and stricter quality control checks.
+* **Faster Response to Issues:** We are committed to responding more quickly to reported bugs and errors, and we will prioritize fixing critical issues that impact user experience.
+
+We are aware of some potential issues users may still encounter:
+
+* **Occasional Errors:** While we are working to minimize errors, some issues may still arise. We encourage users to report any problems they encounter through our GitHub repository or support channels. 
+* **Model Limitations:**  The AI models used by BatchBot have inherent limitations. They may not always provide perfect results or understand complex or ambiguous prompts.
+* **Resource Constraints:**  Depending on the hosting environment and usage, BatchBot may experience occasional performance limitations or delays.
+
+We appreciate your patience and understanding as we work to make BatchBot a more reliable and robust platform. Your feedback is invaluable in helping us improve the bot. 
+
 ## Support
 
 If you have questions or need assistance, you can:
