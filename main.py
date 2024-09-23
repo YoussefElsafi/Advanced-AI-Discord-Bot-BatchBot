@@ -1027,7 +1027,7 @@ async def handle_files_attachment(attachment, channel, prompt=None, message=None
         model_f_p = genai.GenerativeModel(model_name="gemini-1.5-pro-latest")
 
         # Generate a response based on the file content and the prompt
-        history = "\n".join(conversation_history["Conversation"])
+        history = get_conversation_history(message)
         full_prompt = f"{history}\n{attachment.filename}: {prompt or ''}"
 
         try:
