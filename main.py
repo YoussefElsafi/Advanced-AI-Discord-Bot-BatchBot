@@ -10,10 +10,10 @@ import asyncio
 import logging
 import random
 import time
-from system.config import TOKEN, NAME, API_KEY, sys_security, gen_config, gen_config2, ai_toggle, pro, HUGGING_FACE_API, Image_Model, DEFAULT_MUSIC_MODEL, history_limit, limit_history, show_time, custom_model, custom_model_name, custom_model_tokens, history_channel_toggle, embed_colors, Object_Detection_Model, show_tokens_at_startup
+from system.config import TOKEN, NAME, API_KEY, sys_security, gen_config, gen_config2, ai_toggle, pro, HUGGING_FACE_API, Image_Model, DEFAULT_MUSIC_MODEL, history_limit, limit_history, show_time, custom_model, custom_model_name, custom_model_tokens, history_channel_toggle, embed_colors, Object_Detection_Model, show_tokens_at_startup, fix_repeating_prompts, safe_search, ffmpeg_path, tts_toggle, vc_voice, VOICES, sync_voice_with_text, HISTORY_FILE, auto_start_tts
 from duckduckgo_search import DDGS
 import httpx
-from system.instruction import ins, video_ins, file_ins, insV, insV2
+from system.instruction import ins, video_ins, file_ins, insV, insV2, fix_mem_ins
 from discord.utils import get
 import io
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -28,6 +28,9 @@ import openpyxl
 import datetime
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import edge_tts
+import re
+import shutil
 
 # Set up the bot with the correct prefix and intents
 intents = discord.Intents.default()
@@ -41,9 +44,6 @@ if not os.path.exists('system/data'):
     os.makedirs('system/data') 
 if not os.path.exists('system/RAM'):
     os.makedirs('system/RAM') 
-
-# File to store conversation history
-HISTORY_FILE = 'system/data/user_data.json'
 
 # Function to load conversation history from file
 def load_history():
@@ -246,11 +246,14 @@ else:
     elif pro == "True+":
         print("Model: Gemini 1.5 Pro Advanced")
         print("Max Output Tokens: 2097152")
-        genai_model = "gemini-1.5-pro-exp-0827"
+        genai_model = "gemini-1.5-pro-002"
     elif pro == False:
         print("Model: Gemini 1.5 Flash")
         print("Max Output Tokens: 1048576")
         genai_model = "gemini-1.5-flash"
+
+if fix_repeating_prompts:
+    ins = f"{ins}\n{fix_mem_ins}"
 
 
 # Configure the Google Generative AI
@@ -534,56 +537,59 @@ async def on_command_error(ctx, error):
         await ctx.send(f"An error occurred: {error}")
         raise error
 
-async def handle_image_attachment(attachment, channel, prompt=None, message=None):
-    """Handles the image attachment processing and deletion."""
-    file_extension = attachment.filename.split('.')[-1].lower()
-    if file_extension == 'jpg':
-        file_extension = 'jpeg'  # Rename 'jpg' to 'jpeg'
 
-    file_path = os.path.join('system/RAM/read-img', f'image.{file_extension}')
+async def handle_image_attachment(attachments, channel, prompt=None, message=None):
+    """Handles the image attachment processing and deletion for multiple images."""
+    
+    image_files = []  # List to hold processed image paths
 
-    try:
-        img_data = await attachment.read()
-        with open(file_path, 'wb') as file:
-            file.write(img_data)
-
+    for i, attachment in enumerate(attachments):
+        file_extension = attachment.filename.split('.')[-1].lower()
+        if file_extension == 'jpg':
+            file_extension = 'jpeg'  # Rename 'jpg' to 'jpeg'
+        
+        # Generate a unique file name using a counter or timestamp
+        unique_filename = f'image_{i}_{int(time.time())}.{file_extension}'
+        file_path = os.path.join('system/RAM/read-img', unique_filename)
+        
         try:
+            img_data = await attachment.read()
+            with open(file_path, 'wb') as file:
+                file.write(img_data)
+            
             if file_extension == 'jpeg':
                 img = Image.open(file_path).convert('RGB')
             else:
                 img = Image.open(file_path)
 
-            reading_message = await channel.send("Analyzing the image...")
-
-            # Generate content based on the image directly
-
-            # Add to conversation history
-            add_to_history("System", "Image received and processed")
-            history = get_conversation_history(message) # Use the function to get history
-            # Assuming img is a PIL Image object
-            buffered = io.BytesIO()
-            img.save(buffered, format="PNG")  # or "JPEG" if applicable
-            img_bytes = buffered.getvalue()
-
-            text_part = {
-                'text': history
-            }
-
-            # Prepare the image part
-            image_part = {
-                'mime_type': 'image/png',  # or 'image/jpeg'
-                'data': img_bytes
-            }
-
-            # Create a combined input for the model
-            combined_input = {
-                'parts': [text_part, image_part]
-            }
-
-            # Generate a response based on the combined input
-            response = model.generate_content(combined_input)
+            # Add image to the list of processed images
+            image_files.append(img)
+        
+        except Exception as e:
+            await channel.send(f"Error reading attachment {attachment.filename}: {str(e)}")
+            print(f"Error reading attachment: {e}")
+            return
+    
+    if image_files:
+        reading_message = await channel.send("Analyzing the images...")
+        
+        # Prepare the images for the model and generate content
+        try:
+            # Convert images to byte format for the model
+            image_file_objects = []
+            for img in image_files:
+                buffered = io.BytesIO()
+                img.save(buffered, format="PNG")
+                img_bytes = buffered.getvalue()
+                image_file_objects.append({
+                    'mime_type': 'image/png',  # or 'image/jpeg'
+                    'data': img_bytes
+                })
+            # Use your model to generate content from the list of image file objects
+            response = model.generate_content(image_file_objects + [prompt])
             response_text = response.text.strip()
             add_to_history_bot("", response_text)
+
             if response_text.startswith("/img"):
                 # Extract the text after "/img"
                 text_after_command = response_text[len("/img"):].strip() # //img
@@ -633,31 +639,6 @@ async def handle_image_attachment(attachment, channel, prompt=None, message=None
                         file_path = os.path.join('system/RAM/read-img', f'image.{file_extension}')
 
                         try:
-                            img = Image.open(image_path).convert('RGB') if file_extension == 'jpeg' else Image.open(
-                                image_path)
-                            buffered = io.BytesIO()
-                            img.save(buffered, format="PNG")
-                            img_bytes = buffered.getvalue()
-
-                            text_part = {
-                                'text': f"{history}\nGenerated Image: "
-                            }
-
-                            # Prepare the image part
-                            image_part = {
-                                'mime_type': 'image/png',  # or 'image/jpeg'
-                                'data': img_bytes
-                            }
-
-                            # Create a combined input for the model
-                            combined_input = {
-                                'parts': [text_part, image_part]
-                            }
-
-                            response = model_V3.generate_content(combined_input)  # Using the original language model
-                            response_text = response.text.strip()
-
-
                             # Design and send the embed
                             await generating.delete()
                             embed = discord.Embed(title="Generated Image!",
@@ -672,15 +653,14 @@ async def handle_image_attachment(attachment, channel, prompt=None, message=None
                             os.remove(image_path)
                         except Exception as e:
 
-                            await channel.send("Error processing the image, Please try again later.")
-                            add_to_history("System", f"Error processing the image: {str(e)}")
-                            print(f"Error processing image: {e}")
+                            await channel.send("Error sending the generated image, Please try again later.")
+                            add_to_history("System", f"Error sending the generated image the image: {str(e)}")
+                            print(f"Error sending image: {e}")
                             history = get_conversation_history(message) # Use the function to get history
-                            full_prompt = f"{history}\nError processing the image: {str(e)}"
+                            full_prompt = f"{history}\nError sending the image: {str(e)}"
                             response = model.generate_content(full_prompt)  # Using the original language model
                             response_text = response.text.strip()
                             add_to_history_bot("", response_text)
-                            await channel.send(response_text)
 
                     else:
                         print('Error:', response.status_code, response.text)
@@ -693,7 +673,7 @@ async def handle_image_attachment(attachment, channel, prompt=None, message=None
                 ano = await channel.send("Detecting objects in the image...")
                 API_URL = f"https://api-inference.huggingface.co/models/{Object_Detection_Model}"
                 headers = {"Authorization": f"Bearer {HUGGING_FACE_API}"}
-                response = requests.post(API_URL, headers=headers, data=image_part['data'])
+                response = requests.post(API_URL, headers=headers, data=image_files['data'])
                 try:
                     response.raise_for_status()
                     output = response.json()
@@ -735,31 +715,30 @@ async def handle_image_attachment(attachment, channel, prompt=None, message=None
                     print(f"Error: {err}")
                     await channel.send(f"An error occurred while detecting objects the image: {err}")
             else:
-                await channel.send(response_text)
                 await reading_message.delete()
+                await channel.send(response_text)
 
             try:
-                response2 = model_pro.generate_content(img)
+                response2 = model_pro.generate_content(image_file_objects)
                 response_text2 = response2.text.strip()
                 add_to_history("Additional Image details", response_text2)
                 print("Used model Pro")
                 print(" ")
             except Exception as e3:
                 try:
-                    response2 = model_V.generate_content(img)
+                    response2 = model_V.generate_content(image_file_objects)
                     response_text2 = response2.text.strip()
                     add_to_history("Additional Image details", response_text2)
                     print("Used Model Pro Advanced")
                     print(" ")
                 except Exception as e2:
                     try:
-                        response2 = model_V2.generate_content(img)
+                        response2 = model_V2.generate_content(image_file_objects)
                         response_text2 = response2.text.strip()
                         add_to_history("Additional Image details", response_text2)
                         print("Used Model Flash")
                         print(" ")
                     except Exception as e:
-
                         print(f"Failed to run Model Flash, Please try again Later | ERROR: {e}")
                         print(" ")
                     print(f"Failed running Model Pro Advanced, Running Model Flash | ERROR: {e2}")
@@ -781,15 +760,20 @@ async def handle_image_attachment(attachment, channel, prompt=None, message=None
             await channel.send(response_text)
 
         finally:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                print("\n")
-                print(f"Deleted file: {file_path}")
-                print("\n")
-
-    except Exception as e:
-        await channel.send(f"Error reading the attachment: {str(e)}")
-        print(f"Error reading attachment: {e}")
+            # Check if the directory exists
+            if os.path.exists('system/RAM/read-img'):
+                # Iterate over each file in the directory and delete it
+                for filename in os.listdir('system/RAM/read-img'):
+                    file_path = os.path.join('system/RAM/read-img', filename)
+                    try:
+                        if os.path.isfile(file_path) or os.path.islink(file_path):
+                            os.unlink(file_path)  # Remove file or symbolic link
+                        elif os.path.isdir(file_path):
+                            shutil.rmtree(file_path)  # Remove directory and its contents
+                    except Exception as e:
+                        print(f"Error deleting {file_path}: {e}")
+            else:
+                print(f"Directory {'system/RAM/read-img'} does not exist.")
 
 # Function Definitions
 def upload_to_gemini(path, mime_type=None):
@@ -1119,6 +1103,78 @@ async def handle_files_attachment(attachment, channel, prompt=None, message=None
         if os.path.exists(file_path):
             os.remove(file_path)
 
+async def generate_tts(message, response_text):
+    global vc_voice, VOICES
+
+    if os.path.exists(ffmpeg_path):
+        # Clean up the text
+        TEXT = response_text
+        while "<" in TEXT and ">" in TEXT:
+            start = TEXT.find("<")
+            end = TEXT.find(">")
+            TEXT = TEXT[:start] + TEXT[end+1:]
+
+        # Remove emojis from the text
+        TEXT = re.sub(r'[^\x00-\x7F]+', '', TEXT)
+
+        TEXT = TEXT.strip()
+
+        # Adjust the voice index (convert 1-based to 0-based)
+        voice_index = vc_voice - 1
+        if voice_index < 0 or voice_index >= len(VOICES):
+            voice_index = 0  # Default to first voice in list
+
+        VOICE = VOICES[voice_index]
+        print("vc_voice:", vc_voice)
+        print("vc_voice2:", VOICE)
+
+        # Ensure the output directory exists
+        if not os.path.exists('system/RAM/vc'):
+            os.makedirs('system/RAM/vc')
+
+        OUTPUT_FILE = "system/RAM/vc/Generated_VC.mp3"
+
+        # Generate TTS and save to file
+        async def generate_tts():
+            communicate = edge_tts.Communicate(TEXT, VOICE)
+            await communicate.save(OUTPUT_FILE)
+
+        await generate_tts()
+    else:
+        print("Failed to generate VC. FFmpeg not found.")
+        await message.channel.send("Failed to generate VC. FFmpeg not found.")
+        add_to_history("System", "Failed to generate VC. FFmpeg not found.")
+
+async def play_tts(message, response_text):
+    global vc_voice, VOICES, ffmpeg_path
+
+    if os.path.exists(ffmpeg_path):
+        if not message.guild.voice_client:
+            print("You need to be in a voice channel to play the TTS.")
+        else:
+            await generate_tts(message, response_text)
+            OUTPUT_FILE = "system/RAM/vc/Generated_VC.mp3"
+
+            # Check if the author is in a voice channel
+            if message.author.voice:
+                voice_channel = message.author.voice.channel
+                voice_client = message.guild.voice_client
+
+                # Connect to the voice channel if not already connected
+                if not voice_client:
+                    voice_client = await voice_channel.connect()
+
+                # Play the audio file if no audio is playing
+                if not voice_client.is_playing():
+                    voice_client.play(discord.FFmpegPCMAudio(OUTPUT_FILE, executable=ffmpeg_path))
+                else:
+                    await message.channel.send("Already playing audio, please wait.")
+                    print("Already playing audio, please wait.")
+    else:
+        print("Failed to generate VC. FFmpeg not found.")
+        await message.channel.send("Failed to generate VC. FFmpeg not found.")
+        add_to_history("System", "Failed to generate VC. FFmpeg not found.")
+
 def split_long_message(message, max_length=2000):
     """
     Splits a long message into multiple messages, each within the max_length limit.
@@ -1130,6 +1186,8 @@ def split_long_message(message, max_length=2000):
 async def on_message(message):
     global model
     global ai_toggle
+    global vc_voice
+    global VOICES
     if message.author == bot.user:
         return
 
@@ -1144,12 +1202,16 @@ async def on_message(message):
             await handle_youtube_url(message.content, message.channel, prompt=message.content)
         elif message.attachments:
             for attachment in message.attachments:
-                if attachment.filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif')):
-                    await handle_image_attachment(attachment, message.channel, prompt=message.content, message=message)
-                elif attachment.filename.lower().endswith(('mp4', 'avi', 'mkv', 'mov', 'mp3', 'wav', 'aac')):
+                valid_attachments = [
+                attachment for attachment in message.attachments
+                if attachment.filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif'))
+            ]
+            if valid_attachments:
+                await handle_image_attachment(valid_attachments, message.channel, prompt=message.content, message=message)
+            elif attachment.filename.lower().endswith(('mp4', 'avi', 'mkv', 'mov', 'mp3', 'wav', 'aac')):
                     await handle_media_attachment(attachment, message.channel, message=message)
 
-                elif attachment.filename.lower().endswith(('pdf', 'docx', 'md', 'py', 'js', 'bat', 'xlsx', 'pptx', 'csv', 'txt', 'json', 'log', 'html', 'css', 'mcmeta')):
+            elif attachment.filename.lower().endswith(('pdf', 'docx', 'md', 'py', 'js', 'bat', 'xlsx', 'pptx', 'csv', 'txt', 'json', 'log', 'html', 'css', 'mcmeta')):
                     await handle_files_attachment(attachment, message.channel, prompt=message.content, message=message)
 
         else:
@@ -1159,12 +1221,19 @@ async def on_message(message):
                     full_prompt = f"{history}\n{display_name}: {message.content}"
                     response = model.generate_content(full_prompt)  # Assuming 'model' is your language model
                     response_text = response.text.strip()
-                    if response_text.startswith("/img"):
-                        # Extract the text after "/img"
-                        text_after_command = response_text[len("/img"):].strip() # //img
+
+                    # Function to extract text after a command
+                    def extract_text_after_command(text, command):
+                        lines = text.strip().splitlines()
+                        command_line = next((line for line in lines if command in line), None)
+                        if command_line:
+                            return command_line[command_line.find(command) + len(command):].strip()
+                        return None
+
+                    if "/img" in response_text:
+                        text_after_command = extract_text_after_command(response_text, "/img")
 
                         if text_after_command:
-                            # Generate the text after "/img"
                             prompt_response_text = text_after_command
                             add_to_history_bot("", f"/img {prompt_response_text}")
                         else:
@@ -1207,31 +1276,6 @@ async def on_message(message):
                                 file_path = os.path.join('system/RAM/read-img', f'image.{file_extension}')
 
                                 try:
-                                    img = Image.open(image_path).convert('RGB') if file_extension == 'jpeg' else Image.open(
-                                        image_path)
-                                    buffered = io.BytesIO()
-                                    img.save(buffered, format="PNG")
-                                    img_bytes = buffered.getvalue()
-
-                                    text_part = {
-                                        'text': f"{history}\nGenerated Image: "
-                                    }
-
-                                    # Prepare the image part
-                                    image_part = {
-                                        'mime_type': 'image/png',  # or 'image/jpeg'
-                                        'data': img_bytes
-                                    }
-
-                                    # Create a combined input for the model
-                                    combined_input = {
-                                        'parts': [text_part, image_part]
-                                    }
-
-                                    response = model_V3.generate_content(combined_input)  # Using the original language model
-                                    response_text = response.text.strip()
-
-
                                     # Design and send the embed
                                     embed = discord.Embed(title="Generated Image!",
                                                         description=f"{prompt_response_text}",
@@ -1240,7 +1284,6 @@ async def on_message(message):
                                     embed.set_footer(text=f"Generated by {NAME}")
                                     await message.channel.send(file=discord.File(image_path), embed=embed)
                                     add_to_history("Generated Image Details", response_text)
-                                    await send_message(message.channel, response_text)
 
                                     os.remove(image_path)
                                 except Exception as e:
@@ -1260,20 +1303,18 @@ async def on_message(message):
                                 add_to_history("Error", f"Failed to generate image: {response.status_code} | {response.text}")
                                 await message.channel.send("An error occurred while generating the image.")
 
-                    elif response_text.startswith("/music"):
-                        # Extract the text after "/music"
-                        text_after_command = response_text[len("/music"):].strip()
+                    elif "/music" in response_text:
+                        text_after_command = extract_text_after_command(response_text, "/music")
 
                         if text_after_command:
-                            # Generate music based on the prompt
                             prompt = text_after_command
                             add_to_history_bot(" ", f"/music {prompt}")
                         else:
                             # Ask for a prompt if none is provided
                             add_to_history_bot(" ", "/music")
                             history = get_conversation_history(message) # Use the function to get history
-                            add_to_history("System", "What kind of music do you want to generate?")
-                            full_prompt = f"{history}\nSystem: What kind of music do you want me to generate?: "
+                            add_to_history("System", "What music do you want to generate?")
+                            full_prompt = f"{history}\nSystem: What music do you want to generate?: "
                             response = model.generate_content(full_prompt)
                             prompt = response.text.strip()
                             add_to_history_bot(" ", prompt)
@@ -1338,13 +1379,11 @@ async def on_message(message):
                         else:
                             await message.channel.send("An error occurred while generating the music. Please try again later.")
 
-                    elif response_text.startswith("//#m3m0ry9(c0r3//"):
-                        # Extract the text after "//#m3m0ry9(c0r3//"
-                        text_after_command = response_text[len("//#m3m0ry9(c0r3//"):].strip()
+                    elif "/memory_save" in response_text:
+                        text_after_command = extract_text_after_command(response_text, "/memory_save")
 
                         if text_after_command:
-                            # Save the text to core memory
-                            add_to_history_bot("", f"//#m3m0ry9(c0r3// {text_after_command}")
+                            add_to_history_bot("", f"/memory_save {text_after_command}")
                             timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
                             save_memory(f"{timestamp} - {text_after_command}: ", text_after_command)
                             await send_message(message.channel, "Updated Memory!")
@@ -1366,7 +1405,7 @@ async def on_message(message):
                                 add_to_history("System", f"Error generating content: {str(e)}")
                                 await message.channel.send("An error occurred while generating the response.")
                         else:
-                            add_to_history_bot("", "//#m3m0ry9(c0r3//")
+                            add_to_history_bot("", "/memory_save")
                             history = get_conversation_history(message) # Use the function to get history
                             add_to_history("System", "What do you want to save to your core memory?")
                             full_prompt = f"{history}\nSystem: What do you want to save to your core memory?: "
@@ -1394,9 +1433,8 @@ async def on_message(message):
                                 add_to_history("System", f"Error generating content: {str(e)}")
                                 await message.channel.send("An error occurred while generating the response.")
 
-                    elif response_text.startswith("/search*yt"):
-                        # Extract the text after "/search*yt"
-                        text_after_command = response_text[len("/search*yt"):].strip()
+                    elif "/search*yt" in response_text:
+                        text_after_command = extract_text_after_command(response_text, "/search*yt")
 
                         if text_after_command:
                             search_query = text_after_command
@@ -1416,9 +1454,9 @@ async def on_message(message):
                             results = DDGS().text(
                                 keywords=search_query,
                                 region='wt-wt',
-                                safesearch='Off',
+                                safesearch=safe_search,
                                 timelimit='7d',
-                                max_results=180
+                                max_results=140
                             )
                             time.sleep(1)
                             try:
@@ -1438,14 +1476,13 @@ async def on_message(message):
 
                             await send_message(message.channel, f"Sorry, it seems like you have reached the limit for the YouTube search. Please try again later.")
                             add_to_history("Failed-Search", f"An error occurred during search. Please try again later.\nSorry, it seems like you have reached the limit for the YouTube search. Please try again later.\nERROR: {e}")               
-                    elif response_text.startswith("/search"):
-                        # Extract the text after "/search"
-                        text_after_command = response_text[len("/search"):].strip()
+                    elif "/search" in response_text:
+                        text_after_command = extract_text_after_command(response_text, "/search")
 
                         if text_after_command:
                             search_query = text_after_command
                         else:
-                            add_to_history_bot(" ", "/search")
+                            add_to_history_bot("", "/search")
                             history = get_conversation_history(message) # Use the function to get history
                             add_to_history("System", "What do you want to search?")
                             full_prompt = f"{history}\nSystem: What do you want to search?: "
@@ -1460,9 +1497,9 @@ async def on_message(message):
                             results = DDGS().text(
                                 keywords=search_query,
                                 region='wt-wt',
-                                safesearch='Off',
+                                safesearch=safe_search,
                                 timelimit='7d',
-                                max_results=100
+                                max_results=70
                             )
                             time.sleep(1)
                             try:
@@ -1484,13 +1521,25 @@ async def on_message(message):
                             add_to_history("Failed-Search", f"An error occurred during search. Please try again later.\nSorry, it seems like you have reached the limit for the web search. Please try again later.\nERROR: {e}")
                     else:
                         add_to_history_bot("", response_text)
-                        await send_message(message.channel, response_text)
-
+                        if sync_voice_with_text:
+                            if tts_toggle:  # If TTS is enabled
+                                await play_tts(message, response_text) # 1234554
+                                await send_message(message.channel, response_text)
+                            else:
+                                await send_message(message.channel, response_text)
+                        else:
+                            await send_message(message.channel, response_text)
+                            if tts_toggle:  # If TTS is enabled
+                                await play_tts(message, response_text) # 1234554
+                            
             except Exception as e:
-
                 print(f"Error generating content: {e}")
-                add_to_history("System", f"Error generating content: {str(e)}")
+                add_to_history("Error", f"Error generating content: {str(e)}")
                 await message.channel.send("An error occurred while generating the response.")
+            except TimeoutError:
+                print(f"Error: Unable to connect to voice channel due to timeout.")
+                add_to_history("Error", "Unable to connect to voice channel due to timeout.")
+                await message.channel.send("Error: Unable to connect to voice channel due to timeout.")
     else:
         await bot.process_commands(message)
 
@@ -1502,7 +1551,6 @@ async def test(interaction: discord.Interaction):
 @bot.command(name="test")
 async def test2(ctx):
     await ctx.send("Hello World!")
-
 
 # Add other commands and event handlers as needed
 
@@ -1537,18 +1585,61 @@ async def aitoggle(ctx, Toggle: str):
         add_to_history(member_name, f"/aitoggle {Toggle}")
         add_to_history("System", f"{Toggle} is an invalid option. Use 'on' or 'off'.")
 
+# Function to find a voice channel with the specified name, ignoring emojis
+def find_voice_channel(guild, channel_name):
+    # Remove emojis from the provided channel name
+    stripped_name = re.sub(r'[^\x00-\x7F]+', '', channel_name).strip()
+    
+    # Check if there is an exact match
+    voice_channel = get(guild.voice_channels, name=stripped_name)
+    
+    if voice_channel:
+        return voice_channel
+    
+    # If no exact match, check against channels that may match the stripped name
+    for channel in guild.voice_channels:
+        if re.sub(r'[^\x00-\x7F]+', '', channel.name) == stripped_name:
+            return channel
+    
+    return None
+
 #VOICE CHAT (UNDER-DEVELOPMENT)
 @bot.command(name='vc', help='VoiceChat with BatchBot (Under-Development)')
 async def vc(ctx, action, channel_name=None):
+    global tts_toggle
+    global vc_voice
     member = ctx.author.display_name
     if action == 'join':
-        if not channel_name:
-            add_to_history(member, "/vc join") 
-            add_to_history("System", "Please specify a voice channel to join.")
-            await ctx.send("Please specify a voice channel to join.")
-            return
+        if auto_start_tts:
+            if not tts_toggle:
+                tts_toggle = True
 
-        voice_channel = get(ctx.guild.voice_channels, name=channel_name)
+        if not channel_name:
+            if ctx.author.voice:
+                channel_name = ctx.author.voice.channel.name
+                voice_channel = find_voice_channel(ctx.guild, channel_name)
+            elif not ctx.author.voice:
+                add_to_history(member, "/vc join") 
+                add_to_history("System", "Please specify a voice channel to join.")
+                await ctx.send("Please specify a voice channel to join.")
+                return
+
+            if not ctx.voice_client:
+                voice_client = await voice_channel.connect()
+                add_to_history(member, "/vc join")  # Assuming this adds user action history
+                add_to_history("System", f"Joined the {ctx.author.voice.channel} voice channel")
+            elif ctx.voice_client.channel != ctx.author.voice.channel:
+                await ctx.voice_client.move_to(voice_channel)
+                add_to_history(member, "/vc move")  # Assuming this adds user action history
+                add_to_history("System", f"Moved to the {ctx.author.voice.channel} voice channel")
+                await ctx.send(f"Moved to the {ctx.author.voice.channel} voice channel")
+            else:
+                await ctx.send("I'm already in the same voice channel as you.")
+
+        # Remove emojis from the text
+        channel_name = channel_name.strip()
+
+        voice_channel = find_voice_channel(ctx.guild, channel_name)
         if not voice_channel:
             add_to_history(member, f"/vc join {channel_name}") 
             add_to_history("System", f"Voice channel `{channel_name}` not found.")
@@ -1559,12 +1650,17 @@ async def vc(ctx, action, channel_name=None):
             await ctx.voice_client.move_to(voice_channel)
         else:
             await voice_channel.connect()
+        
         add_to_history(member, f"/vc join {channel_name}") 
-        add_to_history("System", f"Joined the {channel_name} voice channel")
-        await ctx.send(f"Joined the {channel_name} voice channel")
+        add_to_history("System", f"Joined the {voice_channel.name} voice channel")
+        await ctx.send(f"Joined the {voice_channel.name} voice channel")
     elif action == 'leave':
+        if auto_start_tts:
+            if tts_toggle:
+                tts_toggle = False
         if ctx.voice_client:
             await ctx.voice_client.disconnect()
+            tts_toggle = False
             add_to_history(member, "/vc leave") 
             add_to_history("System", "Left the voice channel.")
             await ctx.send("Left the voice channel.")
@@ -1572,10 +1668,107 @@ async def vc(ctx, action, channel_name=None):
             add_to_history(member, "/vc leave") 
             add_to_history("System", "I'm not connected to a voice channel.")
             await ctx.send("I'm not connected to a voice channel.")
+    elif action == 'status':
+        if ctx.voice_client:
+            add_to_history(member, "/vc status") 
+            add_to_history("System", f"Connected to {ctx.voice_client.channel.name}")
+            await ctx.send(f"Connected to {ctx.voice_client.channel.name}")
+        else:
+            add_to_history(member, "/vc status") 
+            add_to_history("System", "I'm not connected to a voice channel.")
+            await ctx.send("I'm not connected to a voice channel.")
+    elif action == 'tts':
+        if os.path.exists(ffmpeg_path):
+            text = ' '.join(ctx.message.content.split()[2:])
+            member_name = ctx.author.display_name
+            if text:
+                add_to_history(member_name, f"/vc tts {text}")
+                vc_path = f"system/RAM/vc/Generated_VC.mp3"
+                if tts_toggle:  # If TTS is enabled
+                    generating= await ctx.send("Generating TTS...")
+                    await play_tts(ctx, text)
+                    await generating.delete()
+                    add_to_history("System", f"Successfully generated TTS of `{text}`")
+                    await send_message(ctx, f"Successfully generated TTS of `{text}`")
+                else:
+                    generating = await ctx.send("Generating TTS...")
+                    await generate_tts(ctx, text)
+                    file = discord.File(vc_path, filename="Generated_TTS.wav")
+                    await generating.delete()
+                    add_to_history("System", f"Successfully generated TTS of `{text}`")
+                    await send_message(ctx, f"Successfully generated TTS of `{text}`")
+                    await ctx.send(file=file)
+                    os.remove(vc_path)
+            else:
+                if tts_toggle:
+                    tts_toggle = False
+                    add_to_history(member_name, "/vc tts")
+                    add_to_history("System", "Text-to-speech has been disabled.")
+                    await ctx.send("Text-to-speech has been disabled.")
+                elif not tts_toggle:
+                    voice_client = ctx.voice_client
+                    tts_toggle = True
+                    add_to_history(member_name, "/vc tts")
+                    add_to_history("System", "Text-to-speech has been enabled.")
+                    await ctx.send("Text-to-speech has been enabled.")
+        else:
+            print("Failed to generate VC. FFmpeg not found.")
+            await ctx.send("Failed to generate VC. FFmpeg not found.")
+            add_to_history("System", "Failed to generate VC. FFmpeg not found.")
+
+    elif action == 'voice':
+        voice_number = int(ctx.message.content.split()[2])
+        member_name = ctx.author.display_name
+        add_to_history(member_name, f"/vc voice {voice_number}")
+        if os.path.exists(ffmpeg_path):
+            try:
+                if voice_number < 1 or voice_number > 20:
+                    await ctx.send("Voice channel number must be between 1 and 20.")
+                    add_to_history("System", "Voice channel number must be between 1 and 20.")
+                else:
+                    try:
+                        vc_voice = voice_number
+                        print(f"Chosen voice number: {voice_number}")
+                        add_to_history("System", f"Chosen voice number: {voice_number}")
+                        await ctx.send("Successfully changed voice.")
+                    except Exception as e:
+                        print(f"Error changing voice: {e}")
+                        add_to_history("System", f"Error changing voice: {e}")
+                        await ctx.send(f"Error changing voice: {e}")
+            except ValueError:
+                add_to_history("System", "Voice channel number must be a number.")
+                await ctx.send("Voice channel number must be a number.")
+        else:
+            print("Failed to generate VC. FFmpeg not found.")
+            await ctx.send("Failed to generate VC. FFmpeg not found.")
+            add_to_history("System", "Failed to generate VC. FFmpeg not found.")
+
+    elif action == 'replay':
+        voice_client = ctx.voice_client
+        if voice_client:
+            audio_file = r'system\RAM\vc\Generated_TTS.mp3'
+            if os.path.isfile(audio_file):
+                try:
+                    voice_client.play(discord.FFmpegPCMAudio(audio_file, executable=ffmpeg_path))
+                    add_to_history(member, '/vc replay')
+                    add_to_history("System", 'Replaying Audio...')
+                    await ctx.send(f'Replaying Audio...')
+                except Exception as e:
+                    await ctx.send(f'Error replaying {audio_file}: {str(e)}')
+                    add_to_history(member, f'Error replaying {audio_file}: {str(e)}')
+                    print(f'Error replaying {audio_file}: {str(e)}')
+            else:
+                await ctx.send('Error replaying: No recent voices detected.')
+                add_to_history("System", 'Error replaying: No recent voices detected.')
+                print('Error replaying: No recent voices detected.')
+        else:
+            add_to_history(member, '/vc replay')
+            add_to_history("System", 'Not connected to a voice channel')
+            await ctx.send('Not connected to a voice channel')
     else:
         add_to_history(member, f"/vc {action}")
-        add_to_history("System", f"{action} is Invalid action. Use 'join' or 'leave'.")
-        await ctx.send(f"{action} is Invalid action. Use 'join' or 'leave'.")
+        add_to_history("System", f"{action} is Invalid action.")
+        await ctx.send(f"{action} is Invalid action.")
 
 # Function to send a random image from the 'images' directory
 async def send_random_image(ctx, num_images=1):
@@ -1625,7 +1818,7 @@ async def rimage(ctx, *, query: str):
         results = DDGS().images(
             keywords=query,
             region='wt-wt',
-            safesearch='On',
+            safesearch=safe_search,
             size=None,
             color=None,
             type_image=None,
@@ -1676,7 +1869,7 @@ async def search(ctx, *, query: str):
         results = DDGS().text(
             keywords=search_query,
             region='wt-wt',
-            safesearch='Off',
+            safesearch=safe_search,
             timelimit='7d',
             max_results=150
         )
@@ -1719,7 +1912,7 @@ async def search_yt(ctx, *, query: str):
         results = DDGS().text(
             keywords=search_query,
             region='wt-wt',
-            safesearch='Off',
+            safesearch=safe_search,
             timelimit='7d',
             max_results=180
         )
@@ -1761,7 +1954,7 @@ async def search_save(ctx, *, query: str):
         results = DDGS().text(
             keywords=search_query,
             region='wt-wt',
-            safesearch='Off',
+            safesearch=safe_search,
             timelimit='7d',
             max_results=30
         )
@@ -1828,7 +2021,7 @@ async def searchshow(ctx, *, query: str):
         results = DDGS().text(
           keywords=search_query,
           region='wt-wt',
-          safesearch='Off',
+          safesearch=safe_search,
           timelimit='7d',
           max_results=2
         )
@@ -2010,13 +2203,14 @@ async def add(ctx: commands.Context, *, instruction: str):
 async def system(ctx: commands.Context, *, system: str):
     message = f"added `{system}` to BatchBot's system"
     await ctx.send(message)
-    add_to_history("System", f"{system}")
-    history = get_conversation_history(ctx) # Use the function to get history
+    add_to_history(ctx, "System", f"{system}")
+    history = get_conversation_history(ctx)
     full_prompt = f"{history}\nSystem: {system}"
     response = model.generate_content(full_prompt)
     response_text = response.text.strip()
-    add_to_history_bot("", response_text)
+    add_to_history_bot(ctx, "", response_text)
     await ctx.reply(response_text)
+
 
 @bot.command(name="force", help="Force the bot to do what you want **Doesn't work all the time**")
 async def force(ctx):
@@ -2038,7 +2232,7 @@ async def reset(ctx: commands.Context):
         conversation_history = {}
         add_to_history("System_instructions", " Most important thing! Be cool and Chill")
         add_to_history("System_instructions", " AND DONT START WITH ANY TIMELAPSE! Example to stop: `2024-07-21 12:22:01 - : hello` as you saw in the example, DONT EVER DO THIS NO MATTER WHAT")
-        add_to_history("Core-Memory", "ALWAYS REMEMBER If someone shares personal data (but not passwords or something that is important that is inappropriate to save), not forgettable memory, or shared experiences, use //#m3m0ry9(c0r3//")
+        add_to_history("Core-Memory", "ALWAYS REMEMBER If someone shares personal data (but not passwords or something that is important that is inappropriate to save), not forgettable memory, or shared experiences, use /memory_save")
         save_history()
         try:
             # Reset Gemini Chats //:
@@ -2146,7 +2340,7 @@ model_choices = [
     app_commands.Choice(name="Flux.1 DEV (New)", value="black-forest-labs/FLUX.1-dev"),
     app_commands.Choice(name="Flux.1 DEV LoRA Art (New)", value="Shakker-Labs/FLUX.1-dev-LoRA-Garbage-Bag-Art"),
     app_commands.Choice(name="Flux.1 DEV LoRA Playful Metropolis Art (New)", value="Shakker-Labs/FLUX.1-dev-LoRA-playful-metropolis"),
-    app_commands.Choice(name="Flux.1 DEV LoRA Add Details (New) (Advanced Details)", value="Shakker-Labs/FLUX.1-dev-LoRA-add-details"),
+    app_commands.Choice(name="Flux.1 DEV LoRA Logo Design (New) (Create logos)", value="Shakker-Labs/FLUX.1-dev-LoRA-Logo-Design"),
 ]
 
 @bot.tree.command(name="img", description="Generate an image based on your prompt.")
@@ -2192,8 +2386,8 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
             model_name = "FLUX.1 DEV LoRA Art"
         elif model == "Shakker-Labs/FLUX.1-dev-LoRA-playful-metropolis":
             model_name = "Flux.1 DEV LoRA Playful Metropolis Art"
-        elif model == "Shakker-Labs/FLUX.1-dev-LoRA-add-details":
-            model_name = "Flux.1 DEV LoRA Add Details"
+        elif model == "Shakker-Labs/FLUX.1-dev-LoRA-Logo-Design":
+            model_name = "Flux.1 DEV LoRA Logo Design"
         else:
             model_name = "Unkown Model"
 
@@ -2275,14 +2469,22 @@ async def img(interaction: discord.Interaction, prompt: str, model: str = None):
                 print(f"Error analyzing image: {e}")
                 analysis_result = "Error analyzing the image."
                 add_to_history("System", f"Error analyzing the image: {str(e)}")
-
-            embed = discord.Embed(title="Generated Image!",
-                                  description=f"{prompt}\n",
-                                  color=embed_colors)
-            file = discord.File(image_path, filename="generated_image.png")
-            embed.set_image(url="attachment://generated_image.png")
-            embed.set_footer(text=f"Generated by {interaction.user.display_name}\nModel: {model_name}")
-            await interaction.followup.send(file=file, embed=embed)
+            if model == "Shakker-Labs/FLUX.1-dev-LoRA-Logo-Design":
+                embed = discord.Embed(title="Generated Logo!",
+                                      description=f"{prompt}\n",
+                                      color=embed_colors)
+                file = discord.File(image_path, filename="generated_logo.png")
+                embed.set_image(url="attachment://generated_logo.png")
+                embed.set_footer(text=f"Generated by {interaction.user.display_name}\nModel: {model_name}")
+                await interaction.followup.send(file=file, embed=embed)
+            else:
+                embed = discord.Embed(title="Generated Image!",
+                      description=f"{prompt}\n",
+                      color=embed_colors)
+                file = discord.File(image_path, filename="generated_image.png")
+                embed.set_image(url="attachment://generated_image.png")
+                embed.set_footer(text=f"Generated by {interaction.user.display_name}\nModel: {model_name}")
+                await interaction.followup.send(file=file, embed=embed)
 
             os.remove(image_path)
 
