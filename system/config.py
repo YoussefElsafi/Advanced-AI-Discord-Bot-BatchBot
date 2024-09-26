@@ -82,7 +82,7 @@ else:
         max_tokens = 2097152 
         MODEL = "Gemini 1.5 Pro"
     elif pro == "True+":
-        max_tokens = 32769
+        max_tokens = 32768
         MODEL = "Gemini 1.5 Pro Advanced"
     elif pro == False:
         max_tokens = 1048576
