@@ -16,3 +16,4 @@ pandas
 youtube-transcript-api
 frontend
 matplotlib
+edge-tts
