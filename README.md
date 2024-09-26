@@ -1,210 +1,231 @@
 # 🌌 BatchBot: The AI-Powered Discord Bot (Free & Open Source) 🚀
+
 ![BatchBot Logo](https://github.com/user-attachments/assets/76b8a6fa-168c-43f8-b9cf-6a439d90b063)
-<div style="border-bottom: 2px solid #00ffff; margin-bottom: 20px;"></div>
+
+---
 
 ## Introduction
 
-**BatchBot** is a cutting-edge Discord bot powered by advanced AI models, designed to bring a wide array of features to your server—completely free of charge. It combines neon-styled visuals with state-of-the-art AI functionalities to give your server a futuristic touch. Engage in natural conversations, analyze or generate images, summarize web searches, and explore various other capabilities with a high-tech vibe.
+BatchBot is a cutting-edge Discord bot powered by advanced AI models from Google Gemini and Hugging Face, designed to elevate your server experience with a futuristic, neon-infused aesthetic.  Engage in natural conversations, analyze and generate images, get YouTube summaries, perform web searches, and much more – all for free!
 
-<div style="border-bottom: 2px solid #00ffff; margin-bottom: 20px;"></div>
+---
 
 ## Videos
 
-> ### **Tutorial Video:**  
-> [![Watch the Tutorial](https://img.shields.io/badge/Watch%20Tutorial-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
+* **Tutorial Video:**
+[![Watch the Tutorial](https://img.shields.io/badge/Watch%20Tutorial-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
 
-> ### **Update Video for v1.5.0:**  
-> [![Update Video (v1.5.0)](https://img.shields.io/badge/Update%20Video%20(v1.5.0)-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
+* **Update Video for v1.5.0:**
+[![Update Video (v1.5.0)](https://img.shields.io/badge/Update%20Video%20(v1.5.0)-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
 
-> ### **Update Video for v2.0.0:**  
-> Not available yet.
+* **Update Video for v2.1:**
+Coming soon!
+
+
+---
 
 ## 🌟 Features
 
-BatchBot offers a rich set of features powered by state-of-the-art AI models:
+BatchBot offers a rich suite of features powered by state-of-the-art AI:
 
 ### 🤖 AI Chat
-Engage in dynamic conversations with BatchBot using Google Gemini AI models (Gemini 1.5 Pro, Gemini 1.5 Pro Advanced, Gemini 1.5 Flash). It understands context, provides insightful answers, generates creative content, and can even engage in role-playing scenarios.
 
-### 🖼️ Image Processing
-Upload images, and BatchBot will use powerful vision models to generate detailed descriptions. It can identify objects, scenes, and emotions within the images.
-#### Also the new update v2.0.0 has a new feature of batchbot able to give you an image and reviewing the objects in the image!
-- **Identify Objects in the image | Example:**
-  - **Prompt:** detect the objects in this image
-  - ![bugatti_object_image object](https://github.com/user-attachments/assets/c88bb44f-266b-4a59-aad0-34d59f025502)
-- **Image Recognition | Example:**
-  - ![Image Recognition Example](https://github.com/user-attachments/assets/0f57ab57-28ad-46d1-9863-0e10804e9719)
+Engage in dynamic and context-aware conversations using Google Gemini AI (Pro, Pro Advanced, or Flash). Experience natural language understanding, insightful answers, creative content generation, and even role-playing.
+
+### 🖼️ Image Processing & Object Detection
+
+Upload images for detailed AI-powered analysis. BatchBot can identify objects, scenes, and even emotions within images. **New in v2.1:** Analyze multiple images at once!
+
+* **Object Detection Example:**
+    * **Prompt:** detect the objects in this image
+    * ![bugatti_object_image](https://github.com/user-attachments/assets/c88bb44f-266b-4a59-aad0-34d59f025502)
+
+* **Image Recognition Example:**
+    * ![Image Recognition Example](https://github.com/user-attachments/assets/0f57ab57-28ad-46d1-9863-0e10804e9719)
 
 
 ### 🎥 Video Processing
-Upload videos, and BatchBot will use powerful vision models to generate detailed descriptions. It can identify objects, scenes, and emotions within the video.
+
+Upload videos for AI-powered analysis, identifying objects, scenes, and more.
 
 ### 🎨 Image Generation
-Create stunning and personalized images using Hugging Face's Stable Diffusion. Generate anything from imaginative scenes to funny memes based on your text prompts. BatchBot v2.0.0 now offers an expanded selection of image generation models, giving you more control and creative possibilities:
 
-- **Expanded Model Choices:** Choose from a variety of models, including:
+Create stunning visuals using Hugging Face's Stable Diffusion and other powerful models.  Generate anything from artistic masterpieces to humorous memes.
+
+* **Expanded Model Choices (v2.0.0 & v2.1.0):**  BatchBot offers a wider selection of models, including specialized LoRAs (Low-Rank Adaptations) for unique styles:
     - `stabilityai/stable-diffusion-xl-base-1.0` (Default)
     - `stabilityai/stable-diffusion-3-medium-diffusers`
     - `ehristoforu/dalle-3-xl-v2`
     - `black-forest-labs/FLUX.1-schnell`
     - `dataautogpt3/FLUX-anime2`
-    - **`Yntec/Chip_n_DallE (New)`:**  Chip & DallE, known for its unique style
-    - **`black-forest-labs/FLUX.1-dev (New)`:** Latest development version of Flux.1
-    - **`Shakker-Labs/FLUX.1-dev-LoRA-Garbage-Bag-Art (New)`:** Specializes in a "Garbage Bag Art" style
-    - **`Shakker-Labs/FLUX.1-dev-LoRA-playful-metropolis (New)`:** Creates images with a "Playful Metropolis" aesthetic
-    - **`Shakker-Labs/FLUX.1-dev-LoRA-add-details (New)`:**  Adds intricate details to images
+    - `Yntec/Chip_n_DallE`
+    - `black-forest-labs/FLUX.1-dev`
+    - `Shakker-Labs/FLUX.1-dev-LoRA-Garbage-Bag-Art`
+    - `Shakker-Labs/FLUX.1-dev-LoRA-playful-metropolis`
+    - **`Shakker-Labs/FLUX.1-dev-LoRA-add-details` (v2.0.0):** For highly detailed images
+     - **`Shakker-Labs/FLUX.1-dev-LoRA-Logo-Design` (v2.1.0):** Specializes in Logo design
 
-- **Image Example:**
+
+* **Image Example:**
     - **Prompt:** Realistic bugatti sports car driving on a highway with Lamborghini sports cars driving on the road.
-    - **Model:** [Flux.1 DEV LoRA Add Details](https://huggingface.co/Shakker-Labs/FLUX.1-dev-LoRA-add-details) by [Shakker Labs](https://huggingface.co/Shakker-Labs)
-    - ![bugatti_generated_image](https://github.com/user-attachments/assets/b94c5eec-a543-46ac-8c9f-62488e66d677) 
+    - **Model:** `Shakker-Labs/FLUX.1-dev-LoRA-add-details`
+    - ![bugatti_generated_image](https://github.com/user-attachments/assets/b94c5eec-a543-46ac-8c9f-62488e66d677)
 
 ### 🎶 Music Generation
-Unleash your inner composer with the `/music` command! BatchBot now leverages powerful AI models from Hugging Face to generate unique musical compositions based on your prompts. Choose your sound from:
-  - `facebook/musicgen-small` (Default)
-  - `facebook/musicgen-stereo-small`
+
+Compose unique musical pieces using AI! The `/music` command uses Hugging Face models to generate music based on your prompts.
+
+* **Model Choices:**
+    - `facebook/musicgen-small` (Default)
+    - `facebook/musicgen-stereo-small`
+
 
 ### 📺 YouTube Analysis
-Get summaries and transcripts from YouTube videos. BatchBot can analyze video URLs, extract content, and provide concise summaries. 
 
-- **More Accurate YouTube Results in v2.0.0:** BatchBot now uses the DuckDuckGo Search API for YouTube searches, providing more precise and relevant video suggestions. 
+Get quick summaries and full transcripts from YouTube videos.  BatchBot analyzes video URLs and extracts key information.
+
+* **Enhanced YouTube Search (v2.0.0):**  More accurate and relevant results using the DuckDuckGo Search API.
 
 ### 📂 File Analysis
-Analyze and extract information from a variety of file types including PDFs, DOCX, Markdown, Python code, JavaScript, and more. BatchBot can also provide summaries and insights from these files.
 
-- **Advanced File Handling in v2.0.0:**  BatchBot's file handling has been significantly enhanced. It can now effectively analyze DOCX, XLSX, PPTX, and MCMETA files, expanding its ability to understand and interact with various document types. 
+Analyze and extract valuable information from various file types, including PDFs, DOCX, Markdown, Python, JavaScript, and more.  BatchBot can even summarize complex documents.
+
+* **Advanced File Handling (v2.0.0):**  Expanded support for DOCX, XLSX, PPTX, and MCMETA files.
 
 ### 🌐 Web Search and Summarization
-Utilize DuckDuckGo's API for web searches. BatchBot provides summaries of the most relevant search results, making it easy to find the information you need.
 
-### 🧠 Memory
-BatchBot can remember important information shared during conversations or stored via commands. This feature enables personalized interactions and a better understanding of your preferences. 
+Search the web efficiently using the DuckDuckGo API. BatchBot summarizes the most relevant results, saving you time and effort.
 
-- **New Dedicated Command in v2.0.0:** You can now use the `/memory_save` command to explicitly save messages or information that you want BatchBot to remember.
+### 🧠 Memory & Core Memory
+
+BatchBot remembers important information from conversations and through the dedicated `/memory_save` command (v2.0.0). This enhances personalization and context awareness.
 
 ### 🔤 Custom User Names
-Set a custom name for yourself in interactions with BatchBot, enhancing personalization and user experience.
 
-### 🚀 And More!
-BatchBot continues to evolve with new features and improvements, providing even more value to your server.
+Personalize your interactions by setting a custom name for yourself.
 
-<div style="border-bottom: 2px solid #00ffff; margin-bottom: 20px;"></div>
+
+### 🎙️ Text-to-Speech in Voice Channels (v2.1)
+
+BatchBot can now join and speak in voice channels! Control its voice, replay messages, and more. See the "Features" section for details.
+
+---
+
 
 ## 📈 Why Use Replit for Hosting?
 
-For the best performance and fastest response times, we recommend hosting BatchBot on [Replit](https://replit.com). Replit offers an efficient, user-friendly environment that allows you to deploy and manage your bot with ease. 
+Replit is highly recommended for hosting BatchBot due to its speed, ease of use, and collaborative features.
 
-### Benefits of Using Replit:
 
-- **Instant Deployment:** Get your bot up and running in seconds.
-- **Easy Configuration:** No need to worry about setting up complex environments.
-- **Integrated Version Control:** Manage and track changes effortlessly.
-- **Collaborative Coding:** Work with others in real-time, making it easier to develop and maintain your bot.
+### Benefits of Replit:
 
-For a smooth experience, follow these steps:
+* **Instant Deployment:** Get your bot online quickly.
+* **Simple Configuration:** Easy setup without complex server management.
+* **Version Control:**  Track changes and collaborate effectively.
 
-1. Clone the repository to your Replit environment.
-2. Install the required dependencies.
-3. Configure the settings with your API keys.
-4. Run the bot and enjoy!
 
-<div style="border-bottom: 2px solid #00ffff; margin-bottom: 20px;"></div>
+**Steps for Replit:**
+
+1. Clone the repository to Replit.
+2. Install dependencies using `pip install -r requirements.txt`.
+3. Configure `system/config.py` with your API keys.
+4. Run `python main.py`.
+
+
+---
+
 
 ## Getting Started
 
-To get BatchBot up and running on your Discord server, follow these steps:
 
 ### 📋 Prerequisites
 
-- A Discord server.
-- Python 3.9+ installed.
-- A Discord Bot account: [Discord Applications](https://discord.com/developers/applications) 
-- An API Key from Google Generative AI (Gemini): [Gemini API Key](https://aistudio.google.com/app/apikey)
-- An API Key from Hugging Face: [Hugging Face API Key](https://huggingface.co/settings/tokens)
 
-### 🛠️ Install Dependencies
+* A Discord server
+* Python 3.9+
+* A Discord Bot account ([Discord Applications](https://discord.com/developers/applications))
+* A Google Gemini API Key ([Gemini API Key](https://aistudio.google.com/app/apikey))
+* A Hugging Face API Key ([Hugging Face API Key](https://huggingface.co/settings/tokens))
+
+
+### 🛠️ Installation
+
 
 1. Clone the repository:
-```
+
+
+```bash
 git clone https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot.git
 cd Advanced-AI-Discord-Bot-BatchBot
 ```
-2. Install the required Python packages:
 
-```
+
+2. Install dependencies:
+
+
+```bash
 pip install -r requirements.txt
 ```
 
-### ⚙️ Configure Settings
 
-Edit the `system/config.py` file with the following content and replace the placeholders with your actual API keys and tokens:
+### ⚙️ Configuration
 
-```
-TOKEN = "YOUR_DISCORD_BOT_TOKEN"
-API_KEY = "YOUR_GEMINI_API_KEY"
-HUGGING_FACE_API = "YOUR_HUGGING_FACE_API_KEY"
-DEFAULT_MUSIC_MODEL = "facebook/musicgen-small"
-limit_history = False
-history_limit = 100
-show_time = True
-custom_model = False
-custom_model_name = "gemini-1.5-flash"
-custom_model_tokens = 1048576
-```
 
-### 🚀 Run the Bot
+Edit `system/config.py` with your API keys and desired settings (see detailed explanation above).  
 
-Start the bot using the following command:
-```
+
+### 🚀 Running the Bot
+
+
+```bash
 python main.py
 ```
+
+
+---
+
+
 ## Usage
 
-Interact with BatchBot using the following commands:
 
-- `/ai [prompt]`: Starts a conversation with BatchBot. Use this command for any text-based prompt.
-- `/aitoggle on/off`: Starts a conversation and responses automatically without using the /ai!
-- `/img [prompt] [model(Optional)]`: Generates an image based on the provided description.
-- `works if you have aitoggle on`: Analyzes an image and provides a detailed description.
-- `no need for a command`: Summarizes a YouTube video and provides a transcript.
-- `no need for a command`: Analyzes a file and provides key insights.
-- `/music [prompt]`: Generates a music piece based on your text prompts.
+* `/ai [prompt]`: Chat with BatchBot.
+* `/aitoggle on/off`: Enable/disable automatic AI responses.
+* `/img [prompt] [model]`: Generate images (optional model selection).
+* Upload images for analysis (automatic with `aitoggle` on).
+* Paste YouTube URLs for summaries and transcripts (automatic with `aitoggle` on).
+* Upload files for analysis (automatic with `aitoggle` on).
+* `/music [prompt] [model]`: Generate music (optional model selection).
+* `/vc [action] [channel_name(optional)]`: Voice chat controls (join, leave, status, tts, voice, replay).
+* `//help`:  See all commands.
 
-For a full list of commands, type `//help` in Discord after adding BatchBot to your server.
+
+---
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+MIT License - see the [LICENSE](LICENSE) file.
+
+
+---
+
 
 ## Acknowledgements
 
-- [Google Generative AI](https://aistudio.google.com/app) for providing the advanced AI models.
-- [Hugging Face](https://huggingface.co/) for the image generation models.
-- [DuckDuckGo](https://duckduckgo.com/) for the web search API.
-- And all the amazing contributors who have helped improve BatchBot!
+Thanks to Google, Hugging Face, DuckDuckGo, and all contributors!
+
+
+---
+
 
 ## Known Issues and Limitations
 
-BatchBot is under active development, and we are continuously working to improve its stability and features. 
-We acknowledge that some recent updates have unfortunately introduced unexpected errors and crashes due to insufficient testing and verification procedures. We sincerely apologize for any inconvenience this may have caused our users.
+BatchBot is under active development. We are aware of potential issues and are working to resolve them. Please report any problems you encounter.
 
-We are taking the following steps to address these issues and prevent them from occurring in the future:
 
-* **Enhanced Testing:** We are implementing more rigorous testing protocols, including automated tests and broader user testing, to ensure that future updates are thoroughly vetted before release.
-* **Improved Verification:** We are strengthening our verification processes to catch potential issues earlier in the development cycle. This includes more detailed code reviews and stricter quality control checks.
-* **Faster Response to Issues:** We are committed to responding more quickly to reported bugs and errors, and we will prioritize fixing critical issues that impact user experience.
+---
 
-We are aware of some potential issues users may still encounter:
-
-* **Occasional Errors:** While we are working to minimize errors, some issues may still arise. We encourage users to report any problems they encounter through our GitHub repository or support channels. 
-* **Model Limitations:**  The AI models used by BatchBot have inherent limitations. They may not always provide perfect results or understand complex or ambiguous prompts.
-* **Resource Constraints:**  Depending on the hosting environment and usage, BatchBot may experience occasional performance limitations or delays.
-
-We appreciate your patience and understanding as we work to make BatchBot a more reliable and robust platform. Your feedback is invaluable in helping us improve the bot. 
 
 ## Support
-
-If you have questions or need assistance, you can:
 
 - Reach out via email: [Support](mailto:batchbothelp@gmail.com)
 - Open an issue on our [GitHub repository](https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot/issues)
@@ -214,10 +235,10 @@ If you have questions or need assistance, you can:
 
 Enjoy using BatchBot! 🚀
 
-___
+---
 
 **Update Info:**
 
-- **Latest Version:** v2.0.0
-- **Release Date:** 9/11/2024 | September 11, 2024
-- **Published By:** Youssef Elsafi
+* **Latest Version:** v2.1
+* **Release Date:** 9/27/2024 | October 27, 2024
+* **Published By:** Youssef Elsafi
