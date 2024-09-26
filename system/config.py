@@ -3,21 +3,29 @@ TOKEN = "YOUR_DISCORD_BOT_TOKEN"
 #Gemini API KEY
 API_KEY = "YOUR_GEMINI_API_KEY"
 #Hugging Face API KEY
-HUGGING_FACE_API = "YOUR_HUGGING_FACE_API_KEY" # You can leave it but you will not have access to Image generation
+HUGGING_FACE_API = "YOUR_HUGGING_FACE_API_KEY" # You can leave it but you will not have access to Image, music and object detection generation
 #Discord Bot's Name
-NAME = "BatchBot" # Change to whatever you want!
+NAME = "BatchBot"
 # Server Name
 server_name = "EPIC SERVER" # Replace with your server name
 
 # Config Settings
 ai_toggle = False # Start automatically with ai toggle on or off
-pro = False # Options (True (Gemini 1.5 Pro), True+ (gemini-1.5-pro-exp-0827), False (Gemini 1.5 Flash))
+pro = False # Options (True (Gemini 1.5 Pro), True+ (gemini-1.5-pro-exp-002), False (Gemini 1.5 Flash))
 limit_history = False  # Use a limited conversation history
 history_limit = 100     # Limit for conversation history (if limit_history is True)
 show_time = False # Makes the bot able to know what is the time and date and also the time that the messages was sent
 history_channel_toggle = True  # Enable or disable per-channel history
 embed_colors = 0x00ff00 # Embed color
 show_tokens_at_startup = False # Shows the tokens and the api keys on the terminal at startup
+fix_repeating_prompts = True # This feature will help and stop the bot from repeating responses and sending broken responses (Experimental Feature)
+safe_search = 'On' # Give out safe searches (On, Off)
+ffmpeg_path = r'C:\path\to\ffmpeg.exe'  # replace with the actual path to ffmpeg.exe | Optional
+tts_toggle = False # When you start the bot, it will start automatically with tts on or off Just like ai_toggle
+vc_voice = 1  # Default voice index (1 corresponds to en-US-BrianNeural as its the default voice)
+sync_voice_with_text = True # It will sync up the text and the voice in the exact time, but the response may be a little slower to respond
+HISTORY_FILE = 'system/data/user_data.json' # File to store conversation history
+auto_start_tts = True # When you use /vc join or /vc leave, it will automatically activate and deactivate TTS
 
 # Models Settings
 Image_Generator_Model = "stabilityai/stable-diffusion-xl-base-1.0" # Model of the image generator | You might need to reinvite the bot to fully update the model
@@ -33,6 +41,30 @@ if Image_Model == "stabilityai/stable-diffusion-xl-base-1.0":
 else:
     Image_Model_Name = Image_Model
 
+
+# List of available voices (20 in total)
+VOICES = [
+    'en-US-BrianNeural',     # 1
+    'en-US-JennyNeural',     # 2
+    'en-US-GuyNeural',       # 3
+    'en-GB-SoniaNeural',     # 4
+    'en-AU-NatashaNeural',   # 5
+    'en-IN-NeerjaNeural',    # 6
+    'en-NZ-MitchellNeural',  # 7
+    'en-CA-ClaraNeural',     # 8
+    'en-IE-EmilyNeural',     # 9
+    'en-SG-WayneNeural',     # 10
+    'en-ZA-LeonNeural',      # 11
+    'en-GB-RyanNeural',      # 12
+    'en-AU-WilliamNeural',   # 13
+    'en-IN-PrabhatNeural',   # 14
+    'en-NZ-MollyNeural',     # 15
+    'en-CA-LiamNeural',      # 16
+    'en-IE-OrlaNeural',      # 17
+    'en-SG-LunaNeural',      # 18
+    'en-US-AriaNeural',      # 19
+    'en-GB-MaisieNeural'     # 20
+]
 
 sys_security = [
     {"category": "HARM_CATEGORY_DANGEROUS", "threshold": "BLOCK_NONE"},
