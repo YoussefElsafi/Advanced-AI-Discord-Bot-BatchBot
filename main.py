@@ -245,7 +245,7 @@ else:
         genai_model = "gemini-1.5-pro-latest"
     elif pro == "True+":
         print("Model: Gemini 1.5 Pro Advanced")
-        print("Max Output Tokens: 2097152")
+        print("Max Output Tokens: 32769")
         genai_model = "gemini-1.5-pro-002"
     elif pro == False:
         print("Model: Gemini 1.5 Flash")
