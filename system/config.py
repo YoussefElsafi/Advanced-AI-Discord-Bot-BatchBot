@@ -12,6 +12,7 @@ server_name = "EPIC SERVER" # Replace with your server name
 # Config Settings
 ai_toggle = False # Start automatically with ai toggle on or off
 pro = False # Options (True (Gemini 1.5 Pro), True+ (gemini-1.5-pro-exp-002), False (Gemini 1.5 Flash))
+model_temperature = 1 # Model Temperature
 limit_history = False  # Use a limited conversation history
 history_limit = 100     # Limit for conversation history (if limit_history is True)
 show_time = False # Makes the bot able to know what is the time and date and also the time that the messages was sent
@@ -20,8 +21,9 @@ embed_colors = 0x00ff00 # Embed color
 show_tokens_at_startup = False # Shows the tokens and the api keys on the terminal at startup
 fix_repeating_prompts = True # This feature will help and stop the bot from repeating responses and sending broken responses (Experimental Feature)
 safe_search = 'On' # Give out safe searches (On, Off)
-ffmpeg_path = r'C:\path\to\ffmpeg.exe'  # replace with the actual path to ffmpeg.exe | Optional
-tts_toggle = False # When you start the bot, it will start automatically with tts on or off Just like ai_toggle
+voicechat = True # Enable or disable voice chat
+ffmpeg_path = r'c:\ffmpeg\ffmpeg.exe'  # replace with the actual path to ffmpeg.exe | C:\path\to\ffmpeg.exe
+tts_toggle = False # When you start the bot, it will start automatically with tts on or off
 vc_voice = 1  # Default voice index (1 corresponds to en-US-BrianNeural as its the default voice)
 sync_voice_with_text = True # It will sync up the text and the voice in the exact time, but the response may be a little slower to respond
 HISTORY_FILE = 'system/data/user_data.json' # File to store conversation history
@@ -80,17 +82,22 @@ else:
         max_tokens = 2097152 
         MODEL = "Gemini 1.5 Pro"
     elif pro == "True+":
-        max_tokens = 2097152 
+        max_tokens = 32769
         MODEL = "Gemini 1.5 Pro Advanced"
     elif pro == False:
         max_tokens = 1048576
         MODEL = "Gemini 1.5 Flash"
 
+if pro == "True+":
+    top_k_num = 40
+else:
+    top_k_num = 64
+
 # Configure the Google Generative AI
 gen_config = {
-    "temperature": 1,
+    "temperature": model_temperature,
     "top_p": 0.95,
-    "top_k": 64,
+    "top_k": top_k_num,
     "max_output_tokens": max_tokens,
     "response_mime_type": "text/plain",
 }
