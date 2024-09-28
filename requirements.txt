@@ -17,4 +17,4 @@ youtube-transcript-api
 frontend
 matplotlib
 edge-tts
-
+PyNaCl
