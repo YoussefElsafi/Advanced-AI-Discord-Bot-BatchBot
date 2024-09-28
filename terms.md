@@ -13,7 +13,7 @@ You are permitted to use the Bot in accordance with Discord's Terms of Service. 
 * Harassment, threats, or abuse of other users.
 * Spamming or sending unsolicited messages.
 * Impersonating others or misrepresenting your affiliation with any person or entity.
-* Data scraping, mining, or extraction without our express written permission.
+* Scraping, mining, or extracting data without explicit written permission.
 * Attempting to gain unauthorized access to the Bot, its systems, or user data.
 * Distributing malware, viruses, or other harmful code.
 * Engaging in any activity that violates applicable laws or regulations.
@@ -22,19 +22,19 @@ You are permitted to use the Bot in accordance with Discord's Terms of Service. 
 
 ### 3. Availability and Modifications
 
-We reserve the right to modify, update, suspend, or discontinue the Bot, or any part of its functionality, at any time without prior notice.  We are not responsible for any damages or losses caused by the Bot's unavailability or removal.
+We reserve the right to modify, update, suspend, or discontinue the Bot, or any part of its functionality, at any time without prior notice. We are not responsible for any damages or losses resulting from the Bot’s unavailability or discontinuation.
 
 ### 4. Disclaimer of Warranties and Limitation of Liability
 
-The Bot is provided "as-is" without any warranty, express or implied. We are not liable for any issues, including loss of data, errors, or interruptions in service, arising from the use of the Bot.  Our liability to you is limited to the maximum extent permitted by applicable law.
+The Bot is provided "as-is" without any warranties, whether express or implied. We are not liable for any issues, including loss of data, errors, or service interruptions, arising from the use of the Bot. Our liability to you is limited to the fullest extent permitted by applicable law.
 
 ### 5. Termination
 
-We reserve the right to terminate your access to the Bot, ban or block any users, at any time, for any reason, including violation of these Terms of Service, without notice.
+We reserve the right to terminate your access to the Bot and ban or block any users at any time, for any reason, including violation of these Terms of Service, without notice.
 
 ### 6. Changes to these Terms
 
-We may update these Terms of Service from time to time. We will announce any significant changes to this Privacy Policy in our official Discord server once it is launched. Until then, please check this policy periodically for updates. Your continued use of the Bot after such changes constitutes your acceptance of the updated Terms.
+We may update these Terms of Service from time to time. Any significant changes will be announced in our official Discord server once it is launched. Until then, please check this policy periodically for updates. Continued use of the Bot after changes constitutes your acceptance of the updated Terms.
 
 ___
 **Note:** Our official Discord server is currently under development and will be launched soon.
