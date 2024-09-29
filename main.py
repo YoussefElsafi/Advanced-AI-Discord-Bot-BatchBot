@@ -282,7 +282,7 @@ model_pro_latest = genai.GenerativeModel(
 )
 
 model_pro_advanced = genai.GenerativeModel( 
-    model_name="gemini-1.5-pro-exp-0801",
+    model_name="gemini-1.5-pro-exp-0827",
     generation_config=gen_config,
     system_instruction=(ins),
     safety_settings=sys_security
@@ -296,7 +296,7 @@ model_pro = genai.GenerativeModel(
 )
 
 model_V = genai.GenerativeModel( 
-    model_name="gemini-1.5-pro-exp-0801",
+    model_name="gemini-1.5-pro-exp-0827",
     generation_config=gen_config,
     system_instruction=(insV),
     safety_settings=sys_security
