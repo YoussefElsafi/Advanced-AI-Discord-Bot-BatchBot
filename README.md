@@ -12,14 +12,14 @@ BatchBot is a cutting-edge Discord bot powered by advanced AI models from Google
 
 ## Videos
 
-* **Tutorial Video:**
-[![Watch the Tutorial](https://img.shields.io/badge/Watch%20Tutorial-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
+*   **Getting Started Tutorial:**  A quick walkthrough of the basics to get you up and running.
+    [![Watch the Getting Started Tutorial](https://img.shields.io/badge/Watch%20Tutorial-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
 
-* **Update Video for v1.5.0:**
-[![Update Video (v1.5.0)](https://img.shields.io/badge/Update%20Video%20(v1.5.0)-%F0%9F%93%BA-red)](https://youtu.be/ow-Cw8OLTdI)
+*   **What's New in v1.5.0:**  Learn about the latest features and improvements in this update video.
+    [![Watch the v1.5.0 Update Video](https://img.shields.io/badge/What%20's%20New%20in%20v1.5.0-%F0%9F%93%BA-red)](https://youtu.be/CiG4pMOyPUo?si=qCuVss8UxUCzIEim) 
 
-* **Update Video for v2.1:**
-Coming soon!
+*   **In-Depth Setup Guide:**  A comprehensive guide to setting up the code from scratch.
+    *Coming soon! Stay tuned for updates.*
 
 
 ---
