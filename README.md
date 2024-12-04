@@ -10,6 +10,24 @@ BatchBot is a cutting-edge Discord bot powered by advanced AI models from Google
 
 ---
 
+> ## **🔥 BIG NEWS! BatchBot v2.2 is coming! 🚀**
+>
+> > 🗓️ **Release Date:** December (Specific date dropping soon!)
+> >
+> > ✨ **What's New?** ✨
+> >   *  🚀 **Performance BOOST!**  Faster processing for smoother operations.
+> >   *  ⚙️ **Enhanced Automation:**  Streamline your workflows like never before.
+> >   *  🎨 **Simple:** A sleeker, more intuitive user experience.
+> >   *  🛠️ **Bug Fixes & Stability:** We've squashed those bugs and made things rock solid.
+> >   *  🎉  **And a BUNCH of other exciting new features to explore!**
+> >
+> > ⏳ **Coming Soon!** We're putting the final touches on BatchBot v2.2 to make it our best release yet. Watch for updates!
+> >
+> > 🔗 **Stay Connected:**
+> >   * [Youtube](https://www.youtube.com/@BatchBot)
+> >
+> > We can't wait for you to experience BatchBot v2.2!  😄
+
 ## Videos
 
 *   **Getting Started Tutorial:**  A quick walkthrough of the basics to get you up and running.
