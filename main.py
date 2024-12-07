@@ -68,7 +68,7 @@ ffmpeg_path = ffmpeg_executable_path
 
 bot = commands.Bot(command_prefix="/", intents=intents, heartbeat_timeout=discord_heartbeat_timeout)
 
-dev_DEBUG = True
+dev_DEBUG = False
 Model_Debug = False
 
 # Ensure the log directory exists before configuring logging
