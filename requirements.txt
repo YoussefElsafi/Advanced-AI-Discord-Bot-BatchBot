@@ -1,20 +1,19 @@
 discord.py
+discord.py @ git+https://github.com/Rapptz/discord.py
+discord-ext-voice-recv @ git+https://github.com/imayhaveborkedit/discord-ext-voice-recv
 google-generativeai
 Pillow
 colorama
-requests
 asyncio
-logging
-duckduckgo-search
+requests
 httpx
-PyMuPDF
-python-docx
-Markdown
-openpyxl
-python-pptx
-pandas
 youtube-transcript-api
-frontend
+python-docx
+python-pptx
+openpyxl
 matplotlib
 edge-tts
-PyNaCl
+Flask
+pynacl
+pydub
+beautifulsoup4
