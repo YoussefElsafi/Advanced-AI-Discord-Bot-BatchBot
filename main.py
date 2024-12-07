@@ -1837,7 +1837,7 @@ async def process_message(message, user_settings):
                         display_name = message.author.display_name
                         full_prompt = f"{history}"
                         response = chat_session.send_message(full_prompt)
-                        print(full_ins)
+ 
                         if Model_Debug:
                             print(f"Raw response from model: {response}")
                             print(f"Model configuration: {model}")
