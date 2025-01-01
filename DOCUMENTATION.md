@@ -1,230 +1,176 @@
-# BatchBot Documentation: Your Comprehensive Guide
+# Batchbot Documentation
 
-This document provides an in-depth guide to BatchBot, a powerful Discord bot driven by Google Gemini and enhanced with Hugging Face models. BatchBot is designed for interactive conversations, efficient information retrieval, creative content generation, and a range of utility functions.  This documentation covers everything from setup and configuration to detailed command usage, limitations, and troubleshooting.
+This document provides a comprehensive overview of Batchbot, a Discord bot powered by Google Gemini and designed for interactive conversations, information retrieval, and various utility functions.
 
----
+## Setup and Configuration
 
-## I. Setting Up BatchBot: A Step-by-Step Guide
+1. **Install Required Libraries:**
 
-### 1. Installing the Necessary Libraries: Preparing the Foundation
+   pip install discord.py google-generativeai requests Pillow colorama asyncio logging duckduckgo-search httpx docx markdown openpyxl python-pptx youtube-transcript-api fitz
 
-Before you can unleash BatchBot's potential, you need to install the required Python libraries. These libraries provide the essential tools for interacting with Discord, Google Gemini, Hugging Face, and other services.  Open your terminal or command prompt and execute the following command:
+2. **Obtain API Keys:**
+   - **Discord Bot Token:** Create a Discord application and bot on the Discord Developer Portal and obtain the bot token.
+   - **Google Gemini API Key:** Acquire an API key for Google Gemini.
+   - **Hugging Face API Key (Optional):** Obtain an API key from Hugging Face to enable image generation features.
 
-```bash
-pip install -r requirements.txt
-```
+3. **Configure `config.py`:**
+   - Replace `YOUR_DISCORD_BOT_TOKEN`, `YOUR_GEMINI_API_KEY`, and `YOUR_HUGGING_FACE_API_KEY` with your obtained API keys.
+   - Customize `NAME` and `server_name` as desired.
+   - Select the Default Gemini model using the `gemini_model` variable with the options:
+   
+   **(Flash: Gemini 1.5 Flash | 2.0-Flash: Gemini 2.0 Flash (Experimental) | Pro: Gemini 1.5 Pro | Flash-8B: Gemini 1.5 Flash 8B | Flash-002: Gemini 1.5 Flash 002 | Pro-002: Gemini 1.5 Pro 002 | Flash-Latest: Gemini 1.5 Flash Latest | Pro-Latest: Gemini 1.5 Pro Latest | Exp-1114: Gemini Experimental 1114 | Exp-1121: Gemini Experimental 1121 | Exp-1206: Gemini Experimental 1206)**.
+   
+   *Tip: (You can change the model while the bot is running using the `/model` command but it will not change the Default model)*
+   - (Optional) Configure `Image_Generator_Model` to use a different image generation model from Hugging Face.
 
-**Explanation of Key Libraries:**
+## Configuration Settings
 
-* **`discord.py`:**  The core library for interacting with the Discord API. It allows BatchBot to send and receive messages, manage channels, and interact with users.
-* **`google-generativeai`:**  Provides access to Google's Gemini API, the brain behind BatchBot's advanced AI capabilities.
-* **`requests`:**  A versatile library for making HTTP requests, used for communicating with various web services.
-* **`Pillow (PIL)`:**  A powerful image processing library, essential for handling and manipulating images.
-* **`colorama`:**  Adds color to your terminal output, making logs and debugging information more readable.
-* **`asyncio`:**  Enables asynchronous programming, crucial for handling multiple tasks concurrently.
-* **`logging`:**  Provides tools for logging events and debugging information, helpful for troubleshooting and monitoring BatchBot's activity.
-* **`duckduckgo-search`:**  A library for interacting with the DuckDuckGo search engine, used for web and YouTube searches.
-* **`httpx`:** A modern HTTP client, providing a more efficient and user-friendly way to make HTTP requests.
-* **`docx`, `markdown`, `openpyxl`, `python-pptx`:** These libraries enable BatchBot to process various file formats, including Word documents (docx), Markdown files, Excel spreadsheets (xlsx), and PowerPoint presentations (pptx).
-* **`youtube-transcript-api`:**  Allows BatchBot to retrieve transcripts from YouTube videos.
-* **`fitz`:** A library for working with PDF files. (Alternative to PyPDF2 for improved compatibility)
-* **`edge-tts`:**  Microsoft Edge Text-to-Speech library, used for the voice chat features.
+The `system/config.py` file contains all configurable parameters for the AI bot. These settings allow for fine-grained control over the bot's functionality, performance, and safety features.
 
+<details>
+<summary><strong>Detailed Configuration Options (Click to Expand)</strong></summary>
 
-### 2. Obtaining Your API Keys: Unlocking BatchBot's Power
+- **`gemini_model`**: Specifies the default Gemini model used by the bot. Different models offer varying capabilities and performance characteristics. Model selection can also be performed at runtime using the `/model` command.
+   <details>
+   <summary><strong>Supported Models (Click to Expand)</strong></summary>
+   
+   ### Gemini Flash Models
+   - **`Flash`:** Gemini 1.5 Flash.
+   - **`Flash-Latest`:** Gemini 1.5 Flash Latest.
+   - **`Flash-8B`:** Gemini 1.5 Flash 8B.
 
-BatchBot relies on several API keys to access external services. You'll need to obtain these keys before running the bot.
+   ### Gemini Pro Models
+   - **`Pro`:** Gemini 1.5 Pro.
+   - **`Pro-Latest`:** Gemini 1.5 Pro Latest.
+   - **`Pro-002`:** Gemini 1.5 Pro 002.
 
-* **Discord Bot Token:**
-    1. Go to the [Discord Developer Portal](https://discord.com/developers/applications).
-    2. Create a new application.
-    3. Add a bot to your application.
-    4. Copy the bot token. **Keep this token secret and secure!**
+   ### Google LearnLM (Accessible via `/model` command)
+   - **`LeanLM`:** LearnLM 1.5 Pro Experimental.
+   
+   ### Experimental Models
+   - **`Exp-1114`:** Gemini Experimental 1114.
+   - **`Exp-1121`:** Gemini Experimental 1121.
+   - **`Exp-1206`:** Gemini Experimental 1206.
+   </details>
 
-* **Google Gemini API Key:**
-    1. Navigate to the [Google AI Studio](https://aistudio.google.com/app/apikey) and obtain your Gemini API key. **Keep this key secret and secure!**
+- **`model_temperature`** `(Default: 1)`: Controls the randomness and creativity of the model's responses. Higher values (up to 2) increase creativity but may lead to less coherent outputs. Lower values result in more predictable and factual responses.
 
-* **Hugging Face API Key (Optional, but Recommended):**
-    1. Visit [Hugging Face](https://huggingface.co/settings/tokens) and create an API key. This enables image generation and object detection features.  **Keep this key secret and secure!**
+- **`limit_history`** `(Default: True)`: Enables a limited conversation history to maintain optimal performance and stability.
 
+- **`history_limit`** `(Default: 100)`: Defines the maximum number of conversation turns stored in the history when `limit_history` is enabled.
 
-### 3. Configuring `config.py`: Tailoring BatchBot to Your Needs
+- **`show_time`** `(Default: False)`: When enabled, the bot incorporates timestamps and response time information into its interactions. This may impact performance.
 
-The `system/config.py` file is the control center for BatchBot's settings. Here you'll input your API keys, customize the bot's name, select AI models, and adjust various other parameters.
+- **`history_channel_toggle`** `(Default: True)`: Restricts conversation history to a per-channel basis. This enhances performance and improves contextual awareness within individual channels.
 
-```python
-# config.py
+- **`embed_colors`** `(Default: 0x00ff00)`: Specifies the hexadecimal color code used for message embeds.
 
-# Essential Keys (KEEP THESE SECRET!)
-TOKEN = "YOUR_DISCORD_BOT_TOKEN"  # Your Discord bot token
-API_KEY = "YOUR_GEMINI_API_KEY"  # Your Google Gemini API key
-HUGGING_FACE_API = "YOUR_HUGGING_FACE_API_KEY" # Your Hugging Face API key
+- **`show_tokens_at_startup`** `(Default: False)`: Displays API keys and token information on the console during startup. It is recommended to keep this disabled for security purposes.
 
-# Bot Identity
-NAME = "BatchBot"  # Bot's name (can be customized)
-server_name = "YOUR_SERVER_NAME" # Your Discord server's name
+- **`safe_search`** `(Default: True)`: Enforces safe search filtering for web queries, promoting a safer user experience.
 
-# AI Settings
-ai_toggle = True  # Automatic AI responses (True/False)
-pro = False       # Gemini model (True: Pro, "True+": Pro Advanced, False: Flash)
-limit_history = False  # Limit conversation history (True/False)
-history_limit = 100    # Maximum history length (if limit_history is True)
-fix_repeating_prompts = True # Helps prevent repeating responses (True/False)
-safe_search = 'On' # Safe search for web searches (On/Off)
+- **`ffmpeg_executable_path`**:  Provides the file path to the `ffmpeg` executable, which is required for voice-related functionalities.
 
+- **`tts`** `(Default: True)`: Enables text-to-speech functionality in voice channels, allowing the bot to vocalize its responses.
 
-# Model Settings
-Image_Generator_Model = "stabilityai/stable-diffusion-xl-base-1.0"  # Default image generation model
-DEFAULT_MUSIC_MODEL = "facebook/musicgen-small"  # Default music generation model
-Object_Detection_Model = "facebook/detr-resnet-50" # Object detection model
-custom_model = False  # Use a custom Gemini model (True/False)
-custom_model_name = "gemini-1.5-flash" # Custom model name (if custom_model is True)
-custom_model_tokens = 1048576 # Custom model max tokens (if custom_model is True)
+- **`vc_voice`** `(Default: 1)`: Sets the default voice for voice channel interactions. The default value of `1` corresponds to `en-US-BrianNeural`. Voice selection can be adjusted using the `/vc voice [voice_number]` command.
 
-# ... (other settings - see detailed explanations below)
-```
+- **`sync_voice_with_text`** `(Default: True)`: Synchronizes text and voice output in voice channels. This may introduce latency depending on network conditions.
 
-**Detailed Configuration Options:**
+- **`HISTORY_FILE`** `(Default: 'system/data/data.json')`: Defines the file path for storing conversation history data.
 
-* **`Image_Generator_Model`:** The Hugging Face model used for image generation.  You can explore other models on the Hugging Face website.
-* **`DEFAULT_MUSIC_MODEL`:** The Hugging Face model used for music generation.  Explore options on Hugging Face.
-* **`Object_Detection_Model`:** The Hugging Face model used for object detection in images.
-* **`custom_model`:**  Set to `True` if you want to use a custom Gemini model.  You'll need to specify the `custom_model_name` and `custom_model_tokens`.
-* **`show_time`:** Includes timestamps in the conversation history (`True/False`).
-* **`history_channel_toggle`:** Enables per-channel conversation history (`True/False`).
-* **`embed_colors`:**  Customizes embed colors (hexadecimal color code, e.g., `0x00ff00`).
-* **`show_tokens_at_startup`:** Displays API keys on startup for verification (`True/False`).
-* **`ffmpeg_path`:** Path to your `ffmpeg.exe` (required for TTS). Example: `r"C:\path\to\your\ffmpeg.exe"`. *On Replit, this is usually handled automatically.*
-* **`tts_toggle`:** Enables TTS on startup (`True/False`).
-* **`vc_voice`:**  Default TTS voice index (1-20 - see `VOICES` list in `config.py`).
-* **`sync_voice_with_text`:** Synchronizes TTS with text output (`True/False`).
-* **`HISTORY_FILE`:**  Path to the conversation history file.
-* **`auto_start_tts`:**  Automatically starts TTS on joining a voice channel (`True/False`).
+- **`preview_code_output`** `(Default: True)`: Enables the Gemini feature that predicts the output of code snippets.
 
-### 4. Running BatchBot: Bringing Your AI Companion to Life
+- **`safegen`** `(Default: True)`: Activates content filtering for image generation, preventing the creation of inappropriate or harmful images.
 
-Once you've installed the libraries and configured the settings, you're ready to run BatchBot! Open your terminal in the project directory and execute:
+- **`create_mod_channel`** `(Default: False)`: Automatically creates a moderation channel when inappropriate content is detected. Requires `safegen` to be enabled.
 
-```bash
-python main.py
-```
+- **`mod_channel_name`** `(Default: '🔧・mod')`: Specifies the name of the automatically generated moderation channel.
 
-If everything is set up correctly, BatchBot will connect to Discord and be ready to interact with your server.
+- **`additional_details`** `(Default: False)`: Includes supplementary information about images, media, and files in the bot's responses, similar to previous versions (v1.0.0, v1.5.0, v2.0, v2.1). This may impact response times.
+-  **`discord_heartbeat_timeout`** `(Default: 60)`: Adjusts the Discord heartbeat timeout in seconds. Increase this value if the bot experiences frequent disconnections due to timeouts.
+- **`show_tokens`** `(Default: False)`:  Displays input and output token counts. Primarily used for debugging.
+-  **`add_watermark_to_generated_image`** `(Default: False)`: Applies a watermark to generated images. The watermark image is located at `system/assets/watermark.png`.
+- **`show_safety_settings_on_startup`** `(Default: False)`:  Displays the configured safety settings when the bot starts.
+- **`cool_personality`** `(Default: False)`: Modifies the bot's conversational style to adopt a "cooler" persona.
+    <details>
+   <summary>Personality Options (Click to Expand)</summary>
+        
+   - **`False`:** Disables the alternate personality.
+   - **`True`:** Enables a basic level of the alternate personality.
+   - **`Super`:**  Applies a more pronounced version of the alternate personality.
+   - **`Ultimate`:**  Enables the most prominent version of the alternate personality.
+   </details>
+- **`Image_Generator_Model`** `(Default: "stabilityai/stable-diffusion-xl-base-1.0")`: Specifies the model used for image generation. Changing this setting may require reinviting the bot.
+- **`DEFAULT_MUSIC_MODEL`** `(Default: "facebook/musicgen-small")`:  Determines the model used for music generation. Bot re-invitation might be necessary after modification.
+- **`Object_Detection_Model`** `(Default: "facebook/detr-resnet-50")`: Sets the model used for object detection tasks.
+- **`Dangerous`, `Harassment`, `Hate_Speech`, `Sexually_Explicit`, `Dangerous_Content`**: These parameters control the safety filtering thresholds for different categories of harmful content.
+   <details>
+   <summary>Safety Level Options (Click to Expand)</summary>
 
+   - **`Default`:**  Uses the default safety filtering settings.
+   - **`None`:** Disables safety filtering for the specified category.
+   - **`Low`:**  Filters only high-risk content.
+   - **`Moderate`:** Filters medium and high-risk content.
+   - **`High`:**  Filters low, medium, and high-risk content.
+   </details>
+</details>
 
----
+<details>
+<summary><strong>Experimental Settings (Click to Expand)</strong></summary>
 
-## II. Interacting with BatchBot: Command Usage and Examples
+- **`vc_AI`** `(Default: False)`: Enables experimental voice assistant features, allowing the bot to process and respond to voice input in voice channels. This feature is currently under development.
+-  **`show_invite_link_on_startup`** `(Default: False)`: Displays the bot's invitation link upon startup.
+- **`smart_recognition`** `(Default: False)`:  An experimental feature that attempts to improve the bot's ability to distinguish between different users in a conversation.
+-  **`fix_repeating_prompts`** `(Default: True)`: Implements measures to mitigate issues with repetitive or broken responses. This is an experimental feature.
+</details>
 
-### 1. Basic Commands:  Everyday Interactions
+## Usage
 
-* **`/ai [Prompt]`:**  The heart of BatchBot! This command initiates a conversation.  BatchBot will use its AI powers to respond to your prompt, providing information, generating creative text formats, and engaging in dynamic conversations.
-    * **Example:** `/ai What's the weather like in London today?`
+### Basic Commands
 
-* **`/search [Query]`:** Perform a web search using DuckDuckGo. BatchBot will summarize the most relevant results, saving you time and effort.
-    * **Example:** `/search best laptops for programming`
+- `/ai [Prompt]`: Initiate a conversation with Batchbot using the provided prompt.
+- `/search [Query]`: Perform a web search using Google Search API and provide a summarized response. **(Requires Google Custom Search API & Project Search Engine ID)**
+- `/search*yt [Query]`: Perform a YouTube search using Google Search API and provide a summarized response. **(Requires Google Custom Search API & Project Search Engine ID)**
+- `/img [Prompt]`: Generate an image based on the provided prompt. **(Requires Hugging Face API key)**
+- `/music [Prompt]`: Generate Music based on the provided prompt. **(Requires Hugging Face API key)**
 
-* **`/search*yt [Query]`:** Search YouTube using DuckDuckGo, getting summaries and top video suggestions.
-    * **Example:** `/search*yt funny cat videos`
+### Additional Commands
 
-* **`/img [Prompt]`:** Unleash your creativity! Generate images based on your text prompts using Hugging Face's Stable Diffusion or other selected models.
-    * **Example:**  `/img a majestic dragon flying over a fantasy castle`
-    * **Advanced Example (with Model Selection):** `/img a cute cat wearing a hat model: stabilityai/stable-diffusion-2-1`
+- `/aitoggle [on/off]`: Enable or disable automatic AI responses.
+- `/say [Message] [channel_name(optional)]`: Make the bot say the specified message.
+- `/reset`: Clear the bot's memory of past conversations.
+- `/profile [Member]`: Display information about the specified member (or yourself if no member is specified).
+- `/serverinfo`: Display information about the current server.
+- `/joke`: Tell a random joke.
+- `/search_save [Query]`: Perform a web search and save the results.
+- `/search_img [Query] [Number of Images]`: Search for images and display the specified number.
 
-### 2.  AI Toggle:  Seamless Conversations
+## Image Generation
 
-* **`/aitoggle [on/off]`:**  Enable or disable automatic AI responses. With `aitoggle on`, BatchBot will respond to all your messages in the channel without needing the `/ai` prefix, creating a more natural conversational flow.
+Batchbot can generate images using various models from Hugging Face. You can select the desired model using the `/img` command with the `model` option. For example:
 
+- `/img [Prompt] model: Stable Diffusion XL Base 1.0`
 
-### 3. Memory Management:  Remembering What Matters
+## Voice Chat (Experimental)
 
-* **`/memory`:** Displays BatchBot's saved core memory, showing the information it has stored from past conversations and commands.
+- `/vc join [Channel Name]`: Join the specified voice channel.
+- `/vc leave`: Leave the current voice channel.
+- `/vc voice [voice_number]`: Change Bot's Voice.
+- `/vc replay`: Replay what the bot said.
+- `/vc status`: Check if the bot is in a voice channel or not.
 
-* **`//#m3m0ry9(c0r3// [Memory]`:**  This special command saves important information to BatchBot's core memory.  Use this for personal details, facts you want BatchBot to remember, or key insights from discussions.  This information will be added to the `system/data/core-memory.json` file.
-    * **Example:** `//#m3m0ry9(c0r3// My birthday is on July 15th.`
+## Reporting Issues and Providing Feedback
 
+Note: That the `/report` and `/feedback` does not send us the report or the feedback, It only gets stored in `system/data/feedback.txt` & `system/data/reports.txt`.
 
-### 4.  Utility Commands:  Helpful Tools for Your Server
+- `/report [Report]`: Report bugs or issues with the bot.
+- `/feedback [Feedback]`: Provide feedback or suggestions for improvement.
 
-* **`/timer [Seconds]`:** Sets a timer for the specified number of seconds.  BatchBot will send a message when the timer is up.
-    * **Example:** `/timer 60` (sets a 1-minute timer)
+## Additional Notes
 
-* **`/say [Message]`:** Makes BatchBot repeat the specified message in the chat. This is useful for announcements or for having the bot say something specific.
-    * **Example:** `/say Hello everyone! Welcome to the server!`
-    * **Example (Specify Channel):** `/say Hello #general!  This message is for the general channel!`  (The bot will send "Hello This message is for the general channel!" to the #general channel). You can also use channel ID or mention the channel like <#channelId>.
+- Batchbot's behavior and responses are influenced by the configured Gemini model's training data & the configured system instructions, You can edit the system instructions in `system/instructions`.
+- The bot's memory is persistent and will be retained across sessions.
+- Be mindful of the information you share with the bot, as it may be used at google for model improvement purposes.
 
-* **`/profile [Member]`:** Displays information about a specified Discord member. If no member is provided, it displays information about the user who used the command.
-    * **Example:** `/profile @User123`
-
-* **`/serverinfo`:** Shows details about your Discord server, such as member count, creation date, and channels.
-
-* **`/joke`:**  Need a laugh? BatchBot will tell you a random joke.
-
-### 5.  Search Power-Ups:  Mastering Information Retrieval
-
-* **`/search_save [Query]`:**  Performs a web search using DuckDuckGo and saves the results. This is great for storing research or information you want to access later.
-* **`/search_view`:**  View your saved searches.
-* **`/search_list`:**  Lists the queries of all your saved searches.
-* **`/search_remove [Query or Number]`:**  Removes a saved search either by its query (the search term) or its number in the list.
-* **`/search_show [Query]`:**  Performs a web search and shows the raw results without summarization.
-* **`/search_img [Query] [Number of Images]`:** Searches for images related to your query and displays the specified number of images.
-
-
-### 6.  File Analysis:  Unlocking the Content of Your Documents
-
-BatchBot can analyze various file types, including PDFs, DOCX, XLSX, PPTX, and more. Simply upload the file to the Discord channel, and BatchBot will provide insights, summaries, or answer questions about its content. (This feature works automatically when `ai_toggle` is enabled).
-
-### 7.  YouTube Analysis:  Summarizing and Transcribing Videos
-
-Paste a YouTube URL into the chat, and BatchBot will automatically provide a summary and transcript of the video.  (Requires `ai_toggle` to be enabled).
-
-
-### 8.  Voice Chat Commands (v2.1):  Bringing Conversations to Life
-
-* **`/vc join [Channel Name]`:** Joins the specified voice channel. BatchBot will now join your voice chats and be ready to speak using TTS. 
-* **`/vc leave`:** Makes BatchBot leave the current voice channel.
-* **`/vc status`:** Shows which voice channel BatchBot is currently connected to.
-* **`/vc tts [on/off / message]`:**  Toggles TTS on or off in the voice channel.  You can also use `/vc tts [message]` to have BatchBot speak a specific message in the voice channel.
-* **`/vc voice [voice_number]`:** Changes BatchBot's TTS voice.  See the `VOICES` list in `config.py` for available voice numbers (1-20).
-* **`/vc replay`:** Replays the last TTS message that BatchBot spoke.
-
-### 9. Advanced Usage:  Fine-tuning BatchBot's Behavior
-
-* **`/add [Instruction]`:** Adds a specific instruction to BatchBot's knowledge base. This can be used to fine-tune its responses or add specific information.
-* **`/serv [Instruction]`:** Simulates the server giving instructions to BatchBot, adding them to the conversation history and potentially influencing its responses.
-* **`/system [System Message]`:**  Adds a system message to the conversation history.  This can be used to set the context or provide background information for BatchBot. 
-* **`/force`:** Forces BatchBot to respond, even if it's unsure or hesitant. Use this with caution, as it might produce unexpected results.
-* **`/reset`:** Clears BatchBot's memory, resetting the conversation history and core memory. Use this to start fresh or if BatchBot's responses become irrelevant or erratic.
-* `/name [new_name]`: Changes the user's name that the bot will use when mentioning the user.
-
----
-
-## III.  Troubleshooting and Limitations
-
-### 1. Known Issues
-
-* **Voice chat (Under Development):** The voice chat features are still under development and may have some limitations.
-* **Resource Limitations:**  High server load or complex requests can sometimes cause delays or errors. Consider hosting on Replit or a similar service for improved performance.
-
-### 2.  Model Limitations
-
-* **AI Model Biases:** AI models, including Gemini, are trained on vast amounts of data and may reflect biases present in that data.  BatchBot's responses might sometimes contain inaccurate, biased, or offensive content.
-* **Imperfect Understanding:**  AI models don't always perfectly understand user intent, and responses might be irrelevant or nonsensical at times.  Rephrasing your prompts can often improve results.
-* **Hallucinations:**  AI models can sometimes generate fabricated information or "hallucinate."  Always double-check information provided by BatchBot, especially for critical tasks.
-
-
-### 3.  Reporting Issues and Providing Feedback
-
-* **`/report [Report]`:**  Use this command to report bugs, errors, or other issues you encounter with BatchBot.  Please provide as much detail as possible to help us reproduce and fix the problem.
-* **`/feedback [Feedback]`:**  Share your thoughts, suggestions, and ideas for improving BatchBot! Your feedback is invaluable in helping us develop a better bot.
-
----
-
-## IV. Additional Resources and Support
-
-* **Email:**  [batchbothelp@gmail.com](mailto:batchbothelp@gmail.com)
-* **GitHub Repository:**  [https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot](https://github.com/YoussefElsafi/Advanced-AI-Discord-Bot-BatchBot)  Report issues, contribute to the project, and stay updated on the latest developments.
-
----
-
-This documentation provides a comprehensive overview of BatchBot's features and capabilities. We are continuously working to improve BatchBot and expand its functionality. Your feedback and contributions are always welcome!
+This documentation provides a general overview of Batchbot's features and functionality. For more detailed information, refer to the bot's source code and the Google Gemini documentation.
