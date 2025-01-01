@@ -8,6 +8,9 @@
 
 BatchBot is a cutting-edge Discord bot powered by advanced AI models from **Google Gemini** and **Hugging Face**, designed to elevate your server experience with a futuristic, neon-infused aesthetic. Engage in natural conversations, analyze and generate images, get YouTube summaries, perform web searches, and much more – all for free!
 
+> ❌ Disclaimer!!!
+> Image and file analysis are not working, may be due to the new change of google's google.generativeai library, but we are actively working on a fix.
+
 ---
 
 ## **Videos**
