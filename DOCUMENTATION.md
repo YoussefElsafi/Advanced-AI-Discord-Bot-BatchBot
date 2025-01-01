@@ -6,7 +6,7 @@ This document provides a comprehensive overview of Batchbot, a Discord bot power
 
 1. **Install Required Libraries:**
 
-   pip install discord.py google-generativeai requests Pillow colorama asyncio logging duckduckgo-search httpx docx markdown openpyxl python-pptx youtube-transcript-api fitz
+   pip install -r requirements.txt
 
 2. **Obtain API Keys:**
    - **Discord Bot Token:** Create a Discord application and bot on the Discord Developer Portal and obtain the bot token.
