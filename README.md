@@ -10,24 +10,6 @@ BatchBot is a cutting-edge Discord bot powered by advanced AI models from **Goog
 
 ---
 
-> ## **🔥 BIG NEWS! BatchBot v2.2 is here! 🚀**
->
-> > 🗓️ **Release Date:** December 7, 2024
-> >
-> > ✨ **What's New?** ✨
-> >   * 🚀 **Performance BOOST!** Faster processing for smoother operations.
-> >   * ⚙️ **Enhanced Automation**: Streamline workflows like never before.
-> >   * 🎨 **Simplified & Sleeker**: A more intuitive user experience.
-> >   * 🛠️ **Bug Fixes & Stability**: Squashed bugs and improved performance.
-> >   * 🎉 **And a BUNCH of other exciting new features!**
-> >
-> > **More Languages Added!** BatchBot now supports **7 additional languages**, making it more accessible to global communities. More languages are on the way!
-> >
-> > 🔗 **Stay Connected:**
-> >   * [YouTube](https://www.youtube.com/@BatchBot)
-> >
-> > We're thrilled for you to experience **BatchBot v2.2**! 😄
-
 ## **Videos**
 
 * **Demo:** A quick walkthrough of the basics to get you up and running.
@@ -135,15 +117,32 @@ BatchBot can now join and speak in voice channels! Control its voice, replay mes
 
 ---
 
-## 📈 **Why Use Replit for Hosting?**
+## 📈 Why Host on [bot-hosting.net](https://bot-hosting.net/?aff=1096964888972230767) Instead of Replit for Deployment?
 
-Replit is highly recommended for hosting BatchBot due to its speed, ease of use, and collaborative features.
+While Replit is excellent for development and experimenting with BatchBot, it's not always the best choice for a bot that needs to be online 24/7. Replit's free tier has limitations, and their paid options can become expensive for continuous bot hosting.  For a reliable and cost-effective solution for *deploying* BatchBot, we strongly recommend [bot-hosting.net](https://bot-hosting.net/?aff=1096964888972230767).
 
-### **Benefits of Replit:**
+### **Benefits of [bot-hosting.net](https://bot-hosting.net/?aff=1096964888972230767) for Deployment:**
 
-* **Instant Deployment**: Get your bot online quickly.
-* **Simple Configuration**: Easy setup without complex server management.
-* **Version Control**: Track changes and collaborate effectively.
+*   **Superior Reliability for 24/7 Uptime:** Unlike Replit's free tier, `bot-hosting.net` is designed from the ground up to provide consistent uptime for bots, keeping BatchBot available whenever your users need it.
+*   **Dedicated Server Resources:** You get dedicated resources, ensuring that your bot has smooth and consistent performance without the constraints imposed by shared hosting environments which Replit offers on their free tier.
+*   **Optimized Bot Hosting Environment:** `bot-hosting.net` is specifically tailored for bots, providing an optimized server environment.
+*   **Scalability:** As your bot's user base grows, you can easily scale your resources to handle the increased demand, without the downtime that is associated with migrating to a bigger server.
+*   **Cost-Effective for Continuous Hosting:** In many cases, hosting with `bot-hosting.net` is more affordable than Replit for long-term, continuous bot hosting, especially if you are relying on Replit's paid plans.
+*   **Easy Management:** Their platform provides an intuitive and easy-to-use dashboard, allowing you to manage and monitor your bot without complex server knowledge.
+*   **Automated Backups:** Your valuable bot data is safe and secure with their automated backup system.
+*   **Expert Bot Support:** Access specialized support from a team that understands the nuances of bot hosting.
+
+### **How Using Our Link Supports Our Development Efforts:**
+
+By choosing to host your bot with `bot-hosting.net` through [this link](https://bot-hosting.net/?aff=1096964888972230767), you're directly supporting our efforts to develop and maintain BatchBot. The referral credits we receive help us dedicate more time and resources to:
+
+*   **Improving the Bot:** Adding new features, enhancing performance, and fixing bugs so BatchBot remains the best AI-powered Discord bot.
+*   **Creating More Resources:** Producing tutorials, documentation, and other helpful materials to ensure you have a great experience using BatchBot.
+*   **Keeping BatchBot Free and Open Source:** Your support helps us keep BatchBot accessible to everyone, for free.
+
+**Recommendation:**
+
+We highly recommend using Replit for the initial coding, testing, and experimentation phase.  However, when you are ready to deploy your bot and keep it running 24/7, we strongly suggest using [bot-hosting.net](https://bot-hosting.net/?aff=1096964888972230767) as a reliable and often more cost-effective hosting solution. Your support using [this link](https://bot-hosting.net/?aff=1096964888972230767) will greatly help us improve BatchBot.
 
 ---
 
