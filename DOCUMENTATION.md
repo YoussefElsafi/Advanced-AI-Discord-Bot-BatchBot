@@ -18,7 +18,7 @@ This document provides a comprehensive overview of Batchbot, a Discord bot power
    - Customize `NAME` and `server_name` as desired.
    - Select the Default Gemini model using the `gemini_model` variable with the options:
    
-   **(Flash: Gemini 1.5 Flash | 2.0-Flash: Gemini 2.0 Flash (Experimental) | Pro: Gemini 1.5 Pro | Flash-8B: Gemini 1.5 Flash 8B | Flash-002: Gemini 1.5 Flash 002 | Pro-002: Gemini 1.5 Pro 002 | Flash-Latest: Gemini 1.5 Flash Latest | Pro-Latest: Gemini 1.5 Pro Latest | Exp-1114: Gemini Experimental 1114 | Exp-1121: Gemini Experimental 1121 | Exp-1206: Gemini Experimental 1206)**.
+   **(Flash: Gemini 1.5 Flash | Pro: Gemini 1.5 Pro | Flash-8B: Gemini 1.5 Flash 8B | Flash-002: Gemini 1.5 Flash 002 | Pro-002: Gemini 1.5 Pro 002 | Flash-Latest: Gemini 1.5 Flash Latest | Pro-Latest: Gemini 1.5 Pro Latest | Exp-1114: Gemini Experimental 1114 | Exp-1121: Gemini Experimental 1121 | Exp-1206: Gemini Experimental 1206)**.
    
    *Tip: (You can change the model while the bot is running using the `/model` command but it will not change the Default model)*
    - (Optional) Configure `Image_Generator_Model` to use a different image generation model from Hugging Face.
